@@ -5,9 +5,13 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import br.com.techchallenge.mecanica.billing.application.usecase.ReceberDiagnosticoUseCase;
 import br.com.techchallenge.mecanica.billing.infrastructure.persistence.mapper.OrcamentoPersistenceMapper;
 import br.com.techchallenge.mecanica.billing.infrastructure.persistence.gateway.OrcamentoDiagnosticoMongoGateway;
+@org.springframework.scheduling.annotation.EnableScheduling
 @Configuration
 @ConditionalOnProperty(name="integration.messaging.enabled", havingValue="true")
 public class BillingMessagingConfig {
+    @Bean public DecisaoOutboxWorker decisaoOutboxWorker(MongoTemplate mongo, org.springframework.amqp.rabbit.core.RabbitTemplate rabbit) {
+        return new DecisaoOutboxWorker(mongo, new RabbitDecisaoPublisher(rabbit), java.time.Clock.systemUTC());
+    }
     @Bean public ReceberDiagnosticoUseCase receberDiagnosticoUseCase(MongoTemplate mongo, OrcamentoPersistenceMapper mapper) {
         return new ReceberDiagnosticoUseCase(new OrcamentoDiagnosticoMongoGateway(mongo, mapper));
     }

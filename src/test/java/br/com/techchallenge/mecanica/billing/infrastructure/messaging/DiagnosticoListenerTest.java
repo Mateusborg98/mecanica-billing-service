@@ -17,7 +17,7 @@ class DiagnosticoListenerTest {
         var listener = new DiagnosticoListener(new ReceberDiagnosticoUseCase(gateway));
         listener.receber(fixture()); listener.receber(fixture());
         var captor = org.mockito.ArgumentCaptor.forClass(Orcamento.class);
-        verify(gateway, times(2)).inserirOuRecuperar(captor.capture());
+        verify(gateway, times(2)).inserirOuRecuperar(captor.capture(), any());
         var a = captor.getAllValues().getFirst(); var b = captor.getAllValues().getLast();
         assertEquals(a.getId(), b.getId()); assertEquals(StatusOrcamento.AGUARDANDO_APROVACAO, a.getStatus());
         assertEquals(0, new java.math.BigDecimal("100.00").compareTo(a.calcularTotal()));
@@ -36,13 +36,13 @@ class DiagnosticoListenerTest {
     }
     @Test void devePermitirRetryDeFalhaTransitoriaMongo() throws Exception {
         var gateway = mock(OrcamentoDiagnosticoGateway.class);
-        when(gateway.inserirOuRecuperar(any())).thenThrow(new DataAccessResourceFailureException("indisponível"));
+        when(gateway.inserirOuRecuperar(any(), any())).thenThrow(new DataAccessResourceFailureException("indisponível"));
         var listener = new DiagnosticoListener(new ReceberDiagnosticoUseCase(gateway));
         assertThrows(DataAccessResourceFailureException.class, () -> listener.receber(fixture()));
     }
     @Test void deveRejeitarConflitoDeConteudoNaDlq() throws Exception {
         var gateway = mock(OrcamentoDiagnosticoGateway.class);
-        when(gateway.inserirOuRecuperar(any())).thenThrow(new IllegalArgumentException("conflito"));
+        when(gateway.inserirOuRecuperar(any(), any())).thenThrow(new IllegalArgumentException("conflito"));
         assertThrows(AmqpRejectAndDontRequeueException.class, () -> new DiagnosticoListener(new ReceberDiagnosticoUseCase(gateway)).receber(fixture()));
     }
 }

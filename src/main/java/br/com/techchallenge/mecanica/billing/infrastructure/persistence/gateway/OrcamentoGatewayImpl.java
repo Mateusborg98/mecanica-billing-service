@@ -45,7 +45,12 @@ public class OrcamentoGatewayImpl implements OrcamentoGateway {
         // A decisão só pode substituir o estado pendente, atomicamente no MongoDB.
         var query = Query.query(Criteria.where("_id").is(orcamento.getId().toString())
                 .and("status").is(StatusOrcamento.AGUARDANDO_APROVACAO.name()));
-        var update = new Update().set("status", orcamento.getStatus().name());
+        // Single-document atomic outbox; no Mongo replica set transaction is required.
+        var agora = java.util.Date.from(java.time.Instant.now());
+        var update = new Update().set("status", orcamento.getStatus().name())
+                .set("decisao.eventId", orcamento.getId().toString())
+                .set("decisao.ocorridoEm", agora).set("decisao.pendente", true)
+                .set("decisao.proximaTentativa", agora).set("decisao.tentativas", 0);
         var result = template.updateFirst(query, update, OrcamentoDocument.class);
         if (result.getMatchedCount() != 1) {
             throw new ConflitoOrcamentoException(orcamento.getId());

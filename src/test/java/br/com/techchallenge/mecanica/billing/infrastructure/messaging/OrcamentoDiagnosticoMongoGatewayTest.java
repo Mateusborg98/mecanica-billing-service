@@ -12,21 +12,22 @@ import br.com.techchallenge.mecanica.billing.infrastructure.persistence.document
 import br.com.techchallenge.mecanica.billing.infrastructure.persistence.mapper.OrcamentoPersistenceMapper;
 import br.com.techchallenge.mecanica.billing.infrastructure.persistence.gateway.OrcamentoDiagnosticoMongoGateway;
 class OrcamentoDiagnosticoMongoGatewayTest {
+    private final UUID reparoId = UUID.randomUUID();
     private Orcamento novo() {
         return new Orcamento(UUID.randomUUID(), List.of(new ItemOrcamento(UUID.randomUUID(), TipoItemOrcamento.SERVICO,
                 "Revisão", 1, BigDecimal.TEN)), Instant.now());
     }
     @Test void deveInserirNovoOrcamento() {
         var mongo = mock(MongoTemplate.class); var mapper = new OrcamentoPersistenceMapper(); var candidato = novo();
-        assertSame(candidato, new OrcamentoDiagnosticoMongoGateway(mongo, mapper).inserirOuRecuperar(candidato));
-        verify(mongo).insert(mapper.toDocument(candidato));
+        assertSame(candidato, new OrcamentoDiagnosticoMongoGateway(mongo, mapper).inserirOuRecuperar(candidato, reparoId));
+        verify(mongo).insert(mapper.toDocument(candidato).comReparo(reparoId));
     }
     @Test void reenvioNaoDeveSobrescreverDecisaoExistente() {
         var mongo = mock(MongoTemplate.class); var mapper = new OrcamentoPersistenceMapper(); var candidato = novo();
         var aprovado = Orcamento.reconstituir(candidato.getId(), candidato.getOrdemId(), candidato.getItens(), candidato.getCriadoEm(), StatusOrcamento.APROVADO);
         when(mongo.insert(any(OrcamentoDocument.class))).thenThrow(new DuplicateKeyException("duplicado"));
         when(mongo.findById(candidato.getId().toString(), OrcamentoDocument.class)).thenReturn(mapper.toDocument(aprovado));
-        var resultado = new OrcamentoDiagnosticoMongoGateway(mongo, mapper).inserirOuRecuperar(candidato);
+        var resultado = new OrcamentoDiagnosticoMongoGateway(mongo, mapper).inserirOuRecuperar(candidato, reparoId);
         assertEquals(StatusOrcamento.APROVADO, resultado.getStatus());
         verify(mongo, never()).save(any(OrcamentoDocument.class));
     }
@@ -37,11 +38,11 @@ class OrcamentoDiagnosticoMongoGatewayTest {
                 item.referenciaId(), item.tipo(), item.descricao(), 2, item.valorUnitario())), candidato.getCriadoEm(), StatusOrcamento.AGUARDANDO_APROVACAO);
         when(mongo.insert(any(OrcamentoDocument.class))).thenThrow(new DuplicateKeyException("duplicado"));
         when(mongo.findById(candidato.getId().toString(), OrcamentoDocument.class)).thenReturn(mapper.toDocument(diferente));
-        assertThrows(IllegalArgumentException.class, () -> new OrcamentoDiagnosticoMongoGateway(mongo, mapper).inserirOuRecuperar(candidato));
+        assertThrows(IllegalArgumentException.class, () -> new OrcamentoDiagnosticoMongoGateway(mongo, mapper).inserirOuRecuperar(candidato, reparoId));
     }
     @Test void naoDeveOcultarDuplicidadeSemDocumentoRecuperavel() {
         var mongo = mock(MongoTemplate.class);
         when(mongo.insert(any(OrcamentoDocument.class))).thenThrow(new DuplicateKeyException("duplicado"));
-        assertThrows(DuplicateKeyException.class, () -> new OrcamentoDiagnosticoMongoGateway(mongo, new OrcamentoPersistenceMapper()).inserirOuRecuperar(novo()));
+        assertThrows(DuplicateKeyException.class, () -> new OrcamentoDiagnosticoMongoGateway(mongo, new OrcamentoPersistenceMapper()).inserirOuRecuperar(novo(), reparoId));
     }
 }

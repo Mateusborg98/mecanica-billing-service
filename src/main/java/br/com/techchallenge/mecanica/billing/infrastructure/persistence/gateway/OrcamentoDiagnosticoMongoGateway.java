@@ -11,13 +11,13 @@ public class OrcamentoDiagnosticoMongoGateway implements OrcamentoDiagnosticoGat
     public OrcamentoDiagnosticoMongoGateway(MongoTemplate mongo, OrcamentoPersistenceMapper mapper) {
         this.mongo = mongo; this.mapper = mapper;
     }
-    public Orcamento inserirOuRecuperar(Orcamento candidato) {
-        try { mongo.insert(mapper.toDocument(candidato)); return candidato; }
+    public Orcamento inserirOuRecuperar(Orcamento candidato, java.util.UUID reparoId) {
+        try { mongo.insert(mapper.toDocument(candidato).comReparo(reparoId)); return candidato; }
         catch (DuplicateKeyException exception) {
             var documento = mongo.findById(candidato.getId().toString(), OrcamentoDocument.class);
             if (documento == null) throw exception;
             var existente = mapper.toDomain(documento);
-            if (!existente.getOrdemId().equals(candidato.getOrdemId()) || !mesmosItens(existente, candidato))
+            if ((documento.reparoId() != null && !documento.reparoId().equals(reparoId.toString())) || !existente.getOrdemId().equals(candidato.getOrdemId()) || !mesmosItens(existente, candidato))
                 throw new IllegalArgumentException("Diagnóstico repetido com conteúdo diferente.");
             return existente;
         }

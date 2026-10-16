@@ -11,6 +11,6 @@ public class ReceberDiagnosticoUseCase {
         if (reparoId == null) throw new IllegalArgumentException("Referência do diagnóstico obrigatória.");
         var id = UUID.nameUUIDFromBytes(("mecanica:diagnostico:v1:" + reparoId).getBytes(StandardCharsets.UTF_8));
         var candidato = Orcamento.reconstituir(id, ordemId, itens, ocorridoEm, StatusOrcamento.AGUARDANDO_APROVACAO);
-        return gateway.inserirOuRecuperar(candidato);
+        return gateway.inserirOuRecuperar(candidato, reparoId);
     }
 }

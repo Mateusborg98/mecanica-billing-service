@@ -1,35 +1,35 @@
-# MecÃ¢nica Billing Service â€” Tech Challenge Fase 4
+# Mecânica Billing Service — Tech Challenge Fase 4
 
-MicrosserviÃ§o responsÃ¡vel pelos orÃ§amentos e pagamentos das ordens de serviÃ§o da oficina mecÃ¢nica.
+Microsserviço responsável pelos orçamentos e pagamentos das ordens de serviço da oficina mecânica.
 
-Este projeto faz parte da arquitetura de microsserviÃ§os desenvolvida para o Tech Challenge da Fase 4.
+Este projeto faz parte da arquitetura de microsserviços desenvolvida para o Tech Challenge da Fase 4.
 
 ## Responsabilidades
 
-- Gerar orÃ§amentos com base nos itens identificados durante o diagnÃ³stico.
-- Calcular e registrar os valores de peÃ§as e serviÃ§os.
-- Manter as versÃµes dos orÃ§amentos.
-- Disponibilizar o orÃ§amento para aprovaÃ§Ã£o ou recusa do cliente.
+- Gerar orçamentos com base nos itens identificados durante o diagnóstico.
+- Calcular e registrar os valores de peças e serviços.
+- Manter as versões dos orçamentos.
+- Disponibilizar o orçamento para aprovação ou recusa do cliente.
 - Integrar o processamento de pagamentos com o Mercado Pago.
-- Registrar cobranÃ§as e acompanhar a confirmaÃ§Ã£o dos pagamentos.
-- Comunicar os resultados das operaÃ§Ãµes ao serviÃ§o de ordens de serviÃ§o.
+- Registrar cobranças e acompanhar a confirmação dos pagamentos.
+- Comunicar os resultados das operações ao serviço de ordens de serviço.
 
-## Dados sob responsabilidade do serviÃ§o
+## Dados sob responsabilidade do serviço
 
-- OrÃ§amentos e suas versÃµes.
-- Itens e valores registrados em cada orÃ§amento.
-- AprovaÃ§Ãµes e recusas.
-- CobranÃ§as.
-- Pagamentos e identificadores da integraÃ§Ã£o com o Mercado Pago.
+- Orçamentos e suas versões.
+- Itens e valores registrados em cada orçamento.
+- Aprovações e recusas.
+- Cobranças.
+- Pagamentos e identificadores da integração com o Mercado Pago.
 
-Os itens do orÃ§amento preservam as descriÃ§Ãµes e os preÃ§os utilizados na proposta, evitando que alteraÃ§Ãµes posteriores no catÃ¡logo modifiquem valores jÃ¡ acordados.
+Os itens do orçamento preservam as descrições e os preços utilizados na proposta, evitando que alterações posteriores no catálogo modifiquem valores já acordados.
 
-## IntegraÃ§Ã£o com os demais serviÃ§os
+## Integração com os demais serviços
 
-- mecanica-os-service: identificaÃ§Ã£o da OS e coordenaÃ§Ã£o do fluxo de orÃ§amento e pagamento.
-- mecanica-execution-service: informaÃ§Ãµes do diagnÃ³stico e dos itens necessÃ¡rios ao reparo, conforme os contratos de integraÃ§Ã£o.
+- mecanica-os-service: identificação da OS e coordenação do fluxo de orçamento e pagamento.
+- mecanica-execution-service: informações do diagnóstico e dos itens necessários ao reparo, conforme os contratos de integração.
 
-Cada microsserviÃ§o Ã© responsÃ¡vel por seus prÃ³prios dados. A comunicaÃ§Ã£o entre eles ocorre por contratos de API e mensagens, sem acesso direto ao banco de outro serviÃ§o.
+Cada microsserviço é responsável por seus próprios dados. A comunicação entre eles ocorre por contratos de API e mensagens, sem acesso direto ao banco de outro serviço.
 
 ## Status do projeto
 
@@ -47,4 +47,8 @@ Pagamento, Mercado Pago e Saga completa ainda estão pendentes. O primeiro fluxo
 
 Execution publica diagnósticos via outbox/RabbitMQ; Billing cria orçamentos de forma
 idempotente. Veja [fluxo, execução local e limites](docs/integracao-diagnostico-rabbitmq.md).
-O retorno de aprovação/recusa e a Saga completa ainda estão pendentes.
+O retorno de aprovação/recusa está implementado; a Saga completa permanece pendente.
+
+## Aprovação e recusa integradas
+
+O Billing publica a decisão do orçamento por RabbitMQ. O Execution libera o reparo aprovado ou cancela o recusado, devolvendo reservas sem duplicidade. Consulte [o fluxo, a validação e os limites](docs/decisao-orcamento-rabbitmq.md).

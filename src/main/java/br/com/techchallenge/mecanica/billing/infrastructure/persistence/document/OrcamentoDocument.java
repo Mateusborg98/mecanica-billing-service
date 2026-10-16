@@ -13,5 +13,11 @@ public record OrcamentoDocument(
         String ordemId,
         List<ItemOrcamentoDocument> itens,
         Instant criadoEm,
-        String status) {
+        String status, String reparoId) {
+    public OrcamentoDocument(String id, String ordemId, List<ItemOrcamentoDocument> itens, Instant criadoEm, String status) {
+        this(id, ordemId, itens, criadoEm, status, null);
+    }
+    public OrcamentoDocument comReparo(java.util.UUID reparoId) {
+        return new OrcamentoDocument(id, ordemId, itens, criadoEm, status, reparoId.toString());
+    }
 }
