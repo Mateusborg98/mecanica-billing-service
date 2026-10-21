@@ -25,3 +25,9 @@ Dados fictícios locais preservados:
 - Conclusão em UTC: `2026-10-21T00:01:16.853Z` (20/10, horário de São Paulo).
 
 Essa validação não usou Mercado Pago nem provisionou recursos AWS. Não representa pagamento real, entrega liberada ou Saga completa. As credenciais e a escolha do produto Mercado Pago continuam pendentes. Registros históricos não foram migrados/republicados automaticamente.
+
+## Compatibilidade do runner de CI
+
+A primeira execução remota parou na inicialização do MongoDB, antes de checkout e testes. O servidor recusou iniciar no kernel do runner `ubuntu-latest`, citando [SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912).
+
+O workflow do Billing foi fixado temporariamente em `ubuntu-22.04`, cuja [imagem documentada](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md) usa kernel 6.8. Não foi removido o teste com banco real nem reduzida a cobertura. Rever a fixação quando a imagem MongoDB e os runners mais novos estiverem compatíveis, observando a descontinuação futura do runner Ubuntu 22.04.
