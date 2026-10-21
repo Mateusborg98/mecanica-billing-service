@@ -5,8 +5,7 @@
 3. Após a conclusão do reparo, ocorre o pagamento.
 4. A entrega depende da confirmação do pagamento.
 
-A autorização do orçamento não equivale a pagamento. A integração entre os serviços
-e a barreira de entrega ainda precisam ser implementadas; este documento registra a decisão.
+A autorização do orçamento não equivale a pagamento. A integração entre Execution e Billing já contempla diagnóstico, decisão do orçamento e conclusão com cobrança pendente. A integração da OS, o pagamento real e a barreira de entrega ainda precisam ser implementados.
 
 ## Concorrência no orçamento
 

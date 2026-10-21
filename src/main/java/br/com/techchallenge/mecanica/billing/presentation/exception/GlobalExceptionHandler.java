@@ -12,6 +12,10 @@ import br.com.techchallenge.mecanica.billing.domain.exception.RegraNegocioExcept
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+    @ExceptionHandler(br.com.techchallenge.mecanica.billing.application.exception.CobrancaNaoEncontradaException.class)
+    public ProblemDetail tratarCobrancaNaoEncontrada(br.com.techchallenge.mecanica.billing.application.exception.CobrancaNaoEncontradaException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,exception.getMessage());
+    }
 
     @ExceptionHandler(ConflitoOrcamentoException.class)
     public ProblemDetail tratarConflito(ConflitoOrcamentoException exception) {

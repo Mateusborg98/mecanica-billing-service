@@ -17,6 +17,11 @@ import br.com.techchallenge.mecanica.billing.infrastructure.persistence.reposito
 
 @Configuration
 public class BillingConfig {
+    @Bean public br.com.techchallenge.mecanica.billing.application.usecase.CobrancaService cobrancaService(MongoTemplate mongo,
+            OrcamentoPersistenceMapper mapper,Clock clock) {
+        return new br.com.techchallenge.mecanica.billing.application.usecase.CobrancaService(
+                new br.com.techchallenge.mecanica.billing.infrastructure.persistence.gateway.CobrancaMongoGateway(mongo,mapper),clock);
+    }
 
     @Bean
     public Clock clock() {
