@@ -56,3 +56,7 @@ O Billing publica a decisão do orçamento por RabbitMQ. O Execution libera o re
 ## Conclusão e cobrança pendente
 
 A conclusão do reparo chega ao Billing por RabbitMQ e cria uma única cobrança interna PENDENTE, com o valor do orçamento aprovado. Não há cobrança real no Mercado Pago nesta etapa. Consulte [fluxo, falhas e demonstração](docs/conclusao-e-cobranca.md).
+
+## Checkout Mercado Pago
+
+Geracao idempotente de link via Checkout Pro / Orders: [guia e validacao](docs/checkout-mercado-pago-orders.md). A confirmacao de pagamento ainda nao esta implementada.
