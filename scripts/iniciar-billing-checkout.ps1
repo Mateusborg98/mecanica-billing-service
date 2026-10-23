@@ -8,6 +8,13 @@ docker compose -f $compose up -d --wait mongodb
 if ($LASTEXITCODE -ne 0) { throw "MongoDB integrado indisponivel." }
 $env:MONGODB_URI = "mongodb://billing_local:billing_local_password@localhost:17018/mecanica_billing?authSource=admin"
 $env:MESSAGING_ENABLED = "false"
+if ([string]::IsNullOrWhiteSpace($env:MERCADO_PAGO_WEBHOOK_SECRET)) {
+    $env:MERCADO_PAGO_WEBHOOK_ENABLED = "false"
+    Write-Host "Checkout habilitado. Webhook desabilitado: configure MERCADO_PAGO_WEBHOOK_SECRET para testar notificacoes."
+} else {
+    $env:MERCADO_PAGO_WEBHOOK_ENABLED = "true"
+    Write-Host "Checkout e webhook habilitados localmente."
+}
 $env:SERVER_PORT = "8082"
 $env:SERVER_ADDRESS = "127.0.0.1"
 # Windows: use a short socket path for the JDK HTTP client. Preserve existing JVM options.

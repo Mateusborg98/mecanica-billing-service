@@ -12,6 +12,15 @@ import br.com.techchallenge.mecanica.billing.domain.exception.RegraNegocioExcept
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+    @ExceptionHandler(br.com.techchallenge.mecanica.billing.infrastructure.payment.AssinaturaWebhookInvalidaException.class)
+    public ProblemDetail tratarAssinatura(br.com.techchallenge.mecanica.billing.infrastructure.payment.AssinaturaWebhookInvalidaException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,exception.getMessage());
+    }
+    @ExceptionHandler(org.springframework.dao.DataAccessException.class)
+    public ProblemDetail tratarPersistencia(org.springframework.dao.DataAccessException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,"Persistência indisponível. Tente novamente.");
+    }
+
     @ExceptionHandler(br.com.techchallenge.mecanica.billing.application.exception.CheckoutIndisponivelException.class)
     public ProblemDetail tratarCheckout(br.com.techchallenge.mecanica.billing.application.exception.CheckoutIndisponivelException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,exception.getMessage());

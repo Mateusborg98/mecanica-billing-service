@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.UUID;
 public record Cobranca(UUID id, UUID ordemId, UUID reparoId, BigDecimal valorTotal, String moeda,
         Status status, Instant reparoConcluidoEm, Instant criadaEm) {
-    public enum Status { PENDENTE }
+    public enum Status { PENDENTE, PAGA }
     public Cobranca {
         Objects.requireNonNull(id); Objects.requireNonNull(ordemId); Objects.requireNonNull(reparoId);
         Objects.requireNonNull(valorTotal); Objects.requireNonNull(status);

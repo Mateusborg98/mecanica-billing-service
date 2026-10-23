@@ -48,9 +48,9 @@ Para parar o Billing, Ctrl+C no primeiro terminal. O Mongo fica disponivel; para
 ## Limites desta entrega
 
 A Public Key nao e necessaria neste fluxo de backend com redirecionamento.
-Ainda faltam webhook autenticado, consulta autoritativa de pagamento no provedor, transicao para pago,
-evento de pagamento e bloqueio/liberacao da entrega na OS. Criar link ou voltar do checkout NAO
-confirma pagamento. A cobranca continua PENDENTE. Endpoints seguem locais, sem exposicao publica;
+Webhook autenticado, consulta autoritativa e transicao para PAGA foram implementados em 23/10/2026;
+veja [o guia do webhook](webhook-mercado-pago.md). Ainda faltam validacao remota do webhook, evento de
+pagamento e bloqueio/liberacao da entrega na OS. Criar link ou voltar do checkout NAO confirma pagamento. Endpoints seguem locais, sem exposicao publica;
 a autenticacao/autorizacao precisa ser tratada antes da publicacao.
 Nenhuma compra real ou chamada autenticada ao Mercado Pago foi realizada nesta validacao.
 

@@ -59,4 +59,4 @@ A conclusão do reparo chega ao Billing por RabbitMQ e cria uma única cobrança
 
 ## Checkout Mercado Pago
 
-Geracao idempotente de link via Checkout Pro / Orders: [guia e validacao](docs/checkout-mercado-pago-orders.md). A confirmacao de pagamento ainda nao esta implementada.
+Geracao idempotente de link via Checkout Pro / Orders: [guia e validacao](docs/checkout-mercado-pago-orders.md). Confirmacao automatica implementada com [webhook autenticado e consulta ao provedor](docs/webhook-mercado-pago.md); validacao remota e integracao com a entrega ainda pendentes.
