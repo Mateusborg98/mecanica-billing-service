@@ -26,6 +26,7 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      - run: python3 -m unittest discover -s scripts -p test_webhook_proxy.py -v
       - run: chmod +x mvnw
       - run: ./mvnw -B clean verify
         env:

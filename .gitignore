@@ -33,3 +33,7 @@ target/
 
 # Local validation output
 *.log
+
+# Python local ingress tests
+__pycache__/
+*.pyc

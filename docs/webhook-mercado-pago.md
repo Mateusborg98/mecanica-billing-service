@@ -76,3 +76,37 @@ Nao ha endpoint manual para marcar pagamento como aprovado. Nao foram realizados
 - https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro/get-order/get
 - https://www.mercadopago.com.br/developers/pt/docs/checkout-pro-orders/payment-management/status/order-status
 - https://github.com/mercadopago/sdk-java/blob/master/src/main/java/com/mercadopago/webhook/WebhookSignatureValidator.java
+
+## Tunel temporario de desenvolvimento
+
+Em 23/10/2026 foi preparado Cloudflared 2026.10.3 em `%LOCALAPPDATA%/MecanicaDevTools`,
+fora do Git. O executavel foi baixado do release oficial e conferido contra o SHA-256 publicado.
+A instalacao e local; nao e servico do Windows. Quick Tunnel nao exige conta ou recursos AWS.
+
+```powershell
+.\scripts\iniciar-webhook-https.ps1
+```
+
+A URL exibida termina em `/webhooks/mercado-pago`. Cadastre exatamente essa URL no painel do
+Mercado Pago. O proxy ouve somente 127.0.0.1:8084 e permite apenas POST da rota de webhook;
+assinatura e request-id sao encaminhados ao Billing em 8082. Demais rotas sao bloqueadas.
+O Billing deve estar iniciado com Access Token, segredo e webhook habilitado para processar avisos.
+O tunel pode iniciar antes do Billing para gerar a URL necessaria ao cadastro.
+
+Sem os headers obrigatorios, a rota retorna 401. Com Billing desligado e headers presentes,
+retorna 503. HTTP 200 so acontece depois do recebimento persistido, nao confirma pagamento.
+A URL muda quando o tunel e recriado: atualize o painel. Logs e PIDs ficam em LOCALAPPDATA;
+nao sao gravados tokens, assinaturas nem corpos no log do proxy.
+
+Para encerrar o acesso publico, sem parar outros projetos:
+
+```powershell
+.\scripts\encerrar-webhook-https.ps1
+```
+
+Testes do proxy: `python -m unittest discover -s scripts -p test_webhook_proxy.py -v`.
+Quatro testes validam bloqueio de outras rotas/metodos, repasse exato do webhook, tamanho de corpo,
+headers obrigatorios e recusa de redirecionamentos do backend. Este proxy e destinado apenas
+as sessoes locais de estudo; nao substitui o ingress de producao.
+
+Referencia: https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/
