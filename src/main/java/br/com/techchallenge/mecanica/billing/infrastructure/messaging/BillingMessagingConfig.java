@@ -9,6 +9,11 @@ import br.com.techchallenge.mecanica.billing.infrastructure.persistence.gateway.
 @Configuration
 @ConditionalOnProperty(name="integration.messaging.enabled", havingValue="true")
 public class BillingMessagingConfig {
+    @Bean public PagamentoOutboxWorker pagamentoOutboxWorker(MongoTemplate mongo,
+            org.springframework.amqp.rabbit.core.RabbitTemplate rabbit,java.time.Clock clock) {
+        return new PagamentoOutboxWorker(mongo,new RabbitPagamentoPublisher(rabbit),clock);
+    }
+
     @Bean public ReparoConcluidoListener reparoConcluidoListener(br.com.techchallenge.mecanica.billing.application.usecase.CobrancaService service) {
         return new ReparoConcluidoListener(service);
     }

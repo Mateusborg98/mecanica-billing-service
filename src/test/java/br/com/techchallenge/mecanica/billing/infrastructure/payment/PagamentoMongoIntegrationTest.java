@@ -134,4 +134,42 @@ class PagamentoMongoIntegrationTest {
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.status").value("PAGA"));
         } finally { server.stop(0); }
     }
+
+    Document paymentEvent() { return mongo.findById(id.toString(),Document.class,"orcamentos").get("pagamentoEvento",Document.class); }
+    @Test void pagamentoEEventoAtomicosRepeticaoNaoRearmaPublicacao() {
+        assertNull(paymentEvent()); payments.confirmar(valid(),now);
+        assertEquals(Cobranca.Status.PAGA,charges.buscar(id).status()); assertTrue(paymentEvent().getBoolean("pendente"));
+        var events=new java.util.ArrayList<br.com.techchallenge.mecanica.billing.infrastructure.messaging.PagamentoConfirmado>();
+        var worker=new br.com.techchallenge.mecanica.billing.infrastructure.messaging.PagamentoOutboxWorker(mongo,events::add,clock);
+        assertTrue(worker.publicarProximo()); assertFalse(worker.publicarProximo());
+        var published=paymentEvent(); payments.confirmar(valid(),now.plusSeconds(100));
+        assertEquals(published,paymentEvent()); assertFalse(worker.publicarProximo()); assertEquals(1,events.size());
+        var event=events.getFirst(); assertEquals(id,event.eventId()); assertEquals(id,event.cobrancaId());
+        assertEquals(id,event.ordemId()); assertEquals(id,event.reparoId()); assertEquals(now,event.confirmadoEm());
+        assertEquals(0,new BigDecimal("51").compareTo(event.valor())); assertEquals("BRL",event.moeda());
+    }
+    @Test void falhaNoBrokerPreservaPagamentoERetentaMesmoEvento() {
+        payments.confirmar(valid(),now);
+        var failing=new br.com.techchallenge.mecanica.billing.infrastructure.messaging.PagamentoOutboxWorker(mongo,
+            event->{throw new IllegalStateException("broker offline");},clock);
+        assertFalse(failing.publicarProximo()); assertEquals(Cobranca.Status.PAGA,charges.buscar(id).status());
+        assertTrue(paymentEvent().getBoolean("pendente")); assertFalse(paymentEvent().containsKey("publicadoEm"));
+        var events=new java.util.ArrayList<br.com.techchallenge.mecanica.billing.infrastructure.messaging.PagamentoConfirmado>();
+        var later=new br.com.techchallenge.mecanica.billing.infrastructure.messaging.PagamentoOutboxWorker(mongo,events::add,
+            Clock.fixed(now.plusSeconds(31),ZoneOffset.UTC));
+        assertTrue(later.publicarProximo()); assertEquals(id,events.getFirst().eventId()); assertEquals(now,events.getFirst().confirmadoEm());
+    }
+    @Test void doisPublicadoresNaoPegamMesmaLeaseAtiva() throws Exception {
+        payments.confirmar(valid(),now); var entered=new CountDownLatch(1); var release=new CountDownLatch(1);
+        var worker=new br.com.techchallenge.mecanica.billing.infrastructure.messaging.PagamentoOutboxWorker(mongo,event->{
+            entered.countDown(); try { assertTrue(release.await(10,TimeUnit.SECONDS)); }
+            catch(InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException(e); }
+        },clock);
+        try(var executor=Executors.newSingleThreadExecutor()) {
+            var first=executor.submit(worker::publicarProximo);
+            try { assertTrue(entered.await(10,TimeUnit.SECONDS)); assertFalse(worker.publicarProximo()); }
+            finally { release.countDown(); }
+            assertTrue(first.get(10,TimeUnit.SECONDS));
+        }
+    }
 }

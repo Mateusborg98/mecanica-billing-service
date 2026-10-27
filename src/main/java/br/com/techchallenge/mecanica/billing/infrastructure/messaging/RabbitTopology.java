@@ -10,6 +10,18 @@ public class RabbitTopology {
     public static final String QUEUE = "billing.diagnostico.v1";
     public static final String DECISAO_ROUTE = "orcamento.decidido.v1";
     public static final String DECISAO_QUEUE = "execution.orcamento.v1";
+    public static final String PAGAMENTO_ROUTE = "pagamento.confirmado.v1";
+    public static final String PAGAMENTO_QUEUE = "os.pagamento.v1";
+    @Bean public Declarables pagamentoTopology() {
+        var exchange = new DirectExchange(EXCHANGE, true, false);
+        var dlx = new DirectExchange("mecanica.dlx", true, false);
+        var queue = QueueBuilder.durable(PAGAMENTO_QUEUE).deadLetterExchange("mecanica.dlx")
+                .deadLetterRoutingKey(PAGAMENTO_QUEUE).build();
+        var dlq = QueueBuilder.durable(PAGAMENTO_QUEUE + ".dlq").build();
+        return new Declarables(exchange, dlx, queue, dlq,
+                BindingBuilder.bind(queue).to(exchange).with(PAGAMENTO_ROUTE),
+                BindingBuilder.bind(dlq).to(dlx).with(PAGAMENTO_QUEUE));
+    }
     @Bean public Declarables decisaoTopology() {
         var exchange = new DirectExchange(EXCHANGE, true, false);
         var dlx = new DirectExchange("mecanica.dlx", true, false);

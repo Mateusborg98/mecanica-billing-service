@@ -64,8 +64,8 @@ consulta HTTP simulada, Mongo real, concorrencia, reinicio, repeticoes e aviso d
 Um teste integrado percorre controller -> fila Mongo -> GET HTTP simulado -> PAGA -> GET da cobranca.
 Todos os dados e segredos de teste sao ficticios e usam bancos exclusivos descartados ao final.
 
-Pendente: validar webhook recebido do Mercado Pago por HTTPS com o segredo real; publicar evento de
-pagamento com outbox e integrar a liberacao de entrega no servico de OS. Nenhuma entrega e liberada
+Pendente: validar webhook recebido do Mercado Pago por HTTPS com o segredo real; integrar a liberacao de entrega no servico de OS.
+A publicacao por outbox foi implementada em 27/10/2026: veja [o contrato e o fluxo](pagamento-confirmado-rabbitmq.md). Nenhuma entrega e liberada
 por este commit. O estado PAGA registra a confirmacao inicial: estornos e chargebacks posteriores
 ainda precisam de fluxo proprio antes de usar esse estado como autorizacao de entrega em producao.
 Nao ha endpoint manual para marcar pagamento como aprovado. Nao foram realizados pagamentos reais.

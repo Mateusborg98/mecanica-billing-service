@@ -19,7 +19,11 @@ public class PagamentoMongoGateway implements PagamentoGateway {
         var query=Query.query(new Criteria().andOperator(base,Criteria.where("cobranca.status").is("PENDENTE")));
         var comprovante=new Document("orderId",order.orderId()).append("valorPago",new Decimal128(order.pago()))
             .append("confirmadoEm",Date.from(confirmadoEm)).append("atualizadaNoProvedorEm",Date.from(order.atualizadaEm()));
-        var updated=mongo.updateFirst(query,new Update().set("cobranca.status","PAGA").set("pagamento",comprovante),"orcamentos");
+        var evento=new Document("eventId",order.cobrancaId().toString()).append("confirmadoEm",Date.from(confirmadoEm))
+            .append("pendente",true).append("proximaTentativa",Date.from(confirmadoEm)).append("tentativas",0);
+        // Payment receipt and outgoing event are committed together in one Mongo document.
+        var updated=mongo.updateFirst(query,new Update().set("cobranca.status","PAGA").set("pagamento",comprovante)
+            .set("pagamentoEvento",evento),"orcamentos");
         if(updated.getModifiedCount()==1) return;
         var repetida=Query.query(new Criteria().andOperator(base,Criteria.where("cobranca.status").is("PAGA")
             .and("pagamento.orderId").is(order.orderId()).and("pagamento.valorPago").is(new Decimal128(order.pago()))));
