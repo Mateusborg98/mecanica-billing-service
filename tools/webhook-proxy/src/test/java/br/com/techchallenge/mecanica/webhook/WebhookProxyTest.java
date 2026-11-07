@@ -63,9 +63,16 @@ class WebhookProxyTest {
 
     @Test void administrativePathsAndOtherMethodsAreBlocked() throws Exception {
         for (var path : List.of("/orcamentos", "/cobrancas/1/checkout", "/actuator/health", "/webhooks/mercado-pago/../orcamentos",
-                "//webhooks/mercado-pago?x=1", "/webhooks/mercado-pago", "/webhooks/%6dercado-pago?x=1"))
+                "/webhooks/mercado-pago", "/webhooks/%6dercado-pago?x=1"))
             assertEquals(404, request("POST", path, true).statusCode(), path);
         for (var method : List.of("GET", "PUT", "DELETE", "OPTIONS", "PATCH")) assertEquals(404, request(method, PATH, true).statusCode());
+        assertTrue(calls.isEmpty());
+    }
+
+    @Test void doubleSlashTargetIsRejectedWithoutForwarding() throws Exception {
+        // Some JDK updates reject this URI before it reaches the proxy handler.
+        int code = request("POST", "//webhooks/mercado-pago?x=1", true).statusCode();
+        assertTrue(code == 400 || code == 404, "Unexpected response: " + code);
         assertTrue(calls.isEmpty());
     }
 
