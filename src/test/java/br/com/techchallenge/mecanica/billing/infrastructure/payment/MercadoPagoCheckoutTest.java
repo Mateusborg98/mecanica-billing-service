@@ -38,11 +38,11 @@ class MercadoPagoCheckoutTest {
         var result=provider().criar(charge);
         assertEquals("ORDTEST",result.orderId()); assertEquals("Bearer TEST-fake",auth.get());
         var json=new JsonMapper().readTree(body.get());
-        assertEquals("51.00",json.path("total_amount").asText());
-        assertEquals("manual",json.path("processing_mode").asText());
-        assertEquals("online",json.path("type").asText());
-        assertEquals("51.00",json.path("items").get(0).path("unit_price").asText());
-        assertEquals(id.toString(),json.path("external_reference").asText());
+        assertEquals("51.00",json.path("total_amount").asString());
+        assertEquals("manual",json.path("processing_mode").asString());
+        assertEquals("online",json.path("type").asString());
+        assertEquals("51.00",json.path("items").get(0).path("unit_price").asString());
+        assertEquals(id.toString(),json.path("external_reference").asString());
         String first=body.get(); provider().criar(charge);
         assertEquals(id.toString(),key.get()); assertEquals(first,body.get());
     }
@@ -65,12 +65,12 @@ class MercadoPagoCheckoutTest {
     }
     @Test void falhaDeRedePermiteRepetirSemTrocarChave() throws Exception {
         var client=mock(HttpClient.class);
-        when(client.send(any(HttpRequest.class),any(HttpResponse.BodyHandler.class))).thenThrow(new java.io.IOException("network"));
+        when(client.send(any(HttpRequest.class),org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<String>>any())).thenThrow(new java.io.IOException("network"));
         assertThrows(CheckoutIndisponivelException.class,()->new MercadoPagoCheckout(client,endpoint(),"fake").criar(charge));
     }
     @Test void interrupcaoPreservaFlag() throws Exception {
         var client=mock(HttpClient.class);
-        when(client.send(any(HttpRequest.class),any(HttpResponse.BodyHandler.class))).thenThrow(new InterruptedException());
+        when(client.send(any(HttpRequest.class),org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<String>>any())).thenThrow(new InterruptedException());
         assertThrows(CheckoutIndisponivelException.class,()->new MercadoPagoCheckout(client,endpoint(),"fake").criar(charge));
         assertTrue(Thread.currentThread().isInterrupted());
     }

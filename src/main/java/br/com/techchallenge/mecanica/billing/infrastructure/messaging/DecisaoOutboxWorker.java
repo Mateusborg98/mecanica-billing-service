@@ -11,8 +11,9 @@ public class DecisaoOutboxWorker {
     private final MongoTemplate mongo;
     private final Consumer<OrcamentoDecidido> publisher;
     private final Clock clock;
-    public DecisaoOutboxWorker(MongoTemplate mongo, Consumer<OrcamentoDecidido> publisher, Clock clock) {
-        this.mongo = mongo; this.publisher = publisher; this.clock = clock;
+    private final Consumer<DecisaoOrcamentoComValor> publisherV2;
+    public DecisaoOutboxWorker(MongoTemplate mongo, Consumer<OrcamentoDecidido> publisher, Clock clock, Consumer<DecisaoOrcamentoComValor> publisherV2) {
+        this.mongo = mongo; this.publisher = publisher; this.clock = clock; this.publisherV2=publisherV2;
     }
     @Scheduled(fixedDelayString="${integration.decisao-outbox.delay-ms:2000}")
     public boolean publicarProximo() {
@@ -27,9 +28,15 @@ public class DecisaoOutboxWorker {
         var dono = Query.query(Criteria.where("_id").is(doc.getString("_id")).and("decisao.leaseToken").is(token));
         try {
             var decisao = doc.get("decisao", Document.class);
-            publisher.accept(new OrcamentoDecidido(1, "OrcamentoDecidido", UUID.fromString(decisao.getString("eventId")),
+            var evento=new OrcamentoDecidido(1, "OrcamentoDecidido", UUID.fromString(decisao.getString("eventId")),
                     UUID.fromString(doc.getString("_id")), UUID.fromString(doc.getString("reparoId")),
-                    UUID.fromString(doc.getString("ordemId")), doc.getString("status"), decisao.getDate("ocorridoEm").toInstant()));
+                    UUID.fromString(doc.getString("ordemId")), doc.getString("status"), decisao.getDate("ocorridoEm").toInstant());
+            var total=doc.getList("itens",Document.class).stream().map(item ->
+                new java.math.BigDecimal(item.get("valorUnitario").toString()).multiply(java.math.BigDecimal.valueOf(item.getInteger("quantidade"))))
+                .reduce(java.math.BigDecimal.ZERO,java.math.BigDecimal::add);
+            publisher.accept(evento);
+            publisherV2.accept(new DecisaoOrcamentoComValor(2,"OrcamentoDecidido",evento.eventId(),evento.orcamentoId(),
+                evento.reparoId(),evento.ordemId(),evento.decisao(),evento.ocorridoEm(),total,"BRL"));
         } catch (RuntimeException exception) {
             mongo.updateFirst(dono, new Update().set("decisao.proximaTentativa", Date.from(clock.instant().plusSeconds(30)))
                     .set("decisao.ultimoErro", exception.getClass().getSimpleName())

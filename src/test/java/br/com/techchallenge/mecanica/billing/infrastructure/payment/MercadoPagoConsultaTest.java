@@ -48,7 +48,7 @@ class MercadoPagoConsultaTest {
     }
     @Test void interrupcaoPreservaFlag() throws Exception {
         var client=mock(HttpClient.class);
-        when(client.send(any(HttpRequest.class),any(HttpResponse.BodyHandler.class))).thenThrow(new InterruptedException());
+        when(client.send(any(HttpRequest.class),org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<String>>any())).thenThrow(new InterruptedException());
         assertThrows(CheckoutIndisponivelException.class,()->new MercadoPagoConsulta(client,base(),"fake").consultar("ORDTEST"));
         assertTrue(Thread.currentThread().isInterrupted());
     }

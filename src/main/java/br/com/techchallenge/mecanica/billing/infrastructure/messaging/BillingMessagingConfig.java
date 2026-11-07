@@ -18,10 +18,15 @@ public class BillingMessagingConfig {
         return new ReparoConcluidoListener(service);
     }
     @Bean public DecisaoOutboxWorker decisaoOutboxWorker(MongoTemplate mongo, org.springframework.amqp.rabbit.core.RabbitTemplate rabbit) {
-        return new DecisaoOutboxWorker(mongo, new RabbitDecisaoPublisher(rabbit), java.time.Clock.systemUTC());
+        var publisher = new RabbitDecisaoPublisher(rabbit);
+        return new DecisaoOutboxWorker(mongo, publisher, java.time.Clock.systemUTC(), publisher::accept);
     }
     @Bean public ReceberDiagnosticoUseCase receberDiagnosticoUseCase(MongoTemplate mongo, OrcamentoPersistenceMapper mapper) {
         return new ReceberDiagnosticoUseCase(new OrcamentoDiagnosticoMongoGateway(mongo, mapper));
     }
     @Bean public DiagnosticoListener diagnosticoListener(ReceberDiagnosticoUseCase useCase) { return new DiagnosticoListener(useCase); }
+
+    @Bean public ReparoCanceladoListener reparoCanceladoListener(MongoTemplate mongo) {
+        return new ReparoCanceladoListener(new br.com.techchallenge.mecanica.billing.infrastructure.persistence.gateway.CancelamentoReparoMongoGateway(mongo));
+    }
 }

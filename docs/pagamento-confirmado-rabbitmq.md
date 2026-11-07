@@ -8,7 +8,7 @@ O worker usa lease de 30s e reagenda em 30s se a publicacao falhar.
 - Routing key: `pagamento.confirmado.v1`.
 - Fila duravel de destino: `os.pagamento.v1`.
 - DLQ: `os.pagamento.v1.dlq`, exchange `mecanica.dlx`.
-- Contrato: [pagamento-confirmado-v1.json](contracts/pagamento-confirmado-v1.json).
+- Contrato: [pagamento-confirmado-v1.json](../src/test/resources/contracts/pagamento-confirmado-v1.json).
 - eventId = cobrancaId = orcamentoId; ordemId e reparoId identificam a correlacao.
 - Valor decimal e moeda sao o snapshot da cobranca; confirmadoEm registra a primeira confirmacao.
 

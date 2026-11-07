@@ -26,8 +26,8 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - run: python3 -m unittest discover -s scripts -p test_webhook_proxy.py -v
       - run: chmod +x mvnw
+      - run: ./mvnw -B -f tools/webhook-proxy/pom.xml clean verify
       - run: ./mvnw -B clean verify
         env:
           RUN_MONGO_TESTS: 'true'
@@ -38,4 +38,19 @@ jobs:
           path: |
             target/surefire-reports
             target/site/jacoco
+            target/pmd.xml
+            target/reports/pmd.html
+            tools/webhook-proxy/target/surefire-reports
+            tools/webhook-proxy/target/pmd.xml
+            tools/webhook-proxy/target/reports/pmd.html
       - run: docker build -t mecanica-billing-service:ci .
+
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Kubernetes manifests
+        run: |
+          set -euo pipefail
+          kubectl kustomize k8s > /tmp/app.yaml
+          docker run --rm -i ghcr.io/yannh/kubeconform:v0.7.0 -strict -summary -kubernetes-version 1.36.0 < /tmp/app.yaml

@@ -16,6 +16,16 @@ public class OrcamentoDiagnosticoMongoGateway implements OrcamentoDiagnosticoGat
         catch (DuplicateKeyException exception) {
             var documento = mongo.findById(candidato.getId().toString(), OrcamentoDocument.class);
             if (documento == null) throw exception;
+            // A cancellation may arrive first. Complete its snapshot without reopening it.
+            if (documento.itens() == null && "CANCELADO".equals(documento.status())
+                    && candidato.getOrdemId().toString().equals(documento.ordemId())
+                    && reparoId.toString().equals(documento.reparoId())) {
+                var snapshot=mapper.toDocument(candidato);
+                mongo.updateFirst(org.springframework.data.mongodb.core.query.Query.query(
+                    org.springframework.data.mongodb.core.query.Criteria.where("_id").is(documento.id()).and("itens").exists(false)),
+                    new org.springframework.data.mongodb.core.query.Update().set("itens",snapshot.itens()).set("criadoEm",snapshot.criadoEm()),OrcamentoDocument.class);
+                documento=mongo.findById(candidato.getId().toString(),OrcamentoDocument.class);
+            }
             var existente = mapper.toDomain(documento);
             if ((documento.reparoId() != null && !documento.reparoId().equals(reparoId.toString())) || !existente.getOrdemId().equals(candidato.getOrdemId()) || !mesmosItens(existente, candidato))
                 throw new IllegalArgumentException("Diagnóstico repetido com conteúdo diferente.");

@@ -35,5 +35,3 @@ target/
 *.log
 
 # Python local ingress tests
-__pycache__/
-*.pyc

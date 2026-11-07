@@ -45,20 +45,23 @@ class DecisaoOutboxIntegrationTest {
         assertThrows(br.com.techchallenge.mecanica.billing.application.exception.ConflitoOrcamentoException.class, () -> gateway.salvar(concorrente));
         assertEquals(antes, doc(o).get("decisao", Document.class));
         var enviados = new ArrayList<OrcamentoDecidido>();
-        var worker = new DecisaoOutboxWorker(mongo, enviados::add, clock);
+        var snapshots=new ArrayList<DecisaoOrcamentoComValor>();
+        var worker = new DecisaoOutboxWorker(mongo, enviados::add, clock, snapshots::add);
         assertTrue(worker.publicarProximo()); assertFalse(worker.publicarProximo());
         assertEquals(o.getStatus().name(), enviados.getFirst().decisao());
+        assertEquals(1,snapshots.size());assertEquals(0,BigDecimal.TEN.compareTo(snapshots.getFirst().valorTotal()));
+        assertEquals("BRL",snapshots.getFirst().moeda());assertEquals(o.getStatus().name(),snapshots.getFirst().decisao());
         assertEquals(o.getId(), enviados.getFirst().eventId());
         assertEquals(o.getOrdemId(), enviados.getFirst().ordemId());
         assertFalse(doc(o).get("decisao", Document.class).getBoolean("pendente"));
     }
     @Test void falhaDePublicacaoDeveManterDecisaoEPermitirRetentativa() {
         var o=criar(); o.aprovar(); gateway.salvar(o);
-        var worker = new DecisaoOutboxWorker(mongo, event -> { throw new IllegalStateException("broker indisponível"); }, clock);
+        var worker = new DecisaoOutboxWorker(mongo, event -> { throw new IllegalStateException("broker indisponível"); }, clock, v2 -> {});
         assertFalse(worker.publicarProximo()); assertFalse(worker.publicarProximo());
         assertEquals(StatusOrcamento.APROVADO, gateway.buscarPorId(o.getId()).orElseThrow().getStatus());
         var eventos = new ArrayList<OrcamentoDecidido>();
-        assertTrue(new DecisaoOutboxWorker(mongo, eventos::add, Clock.offset(clock, Duration.ofSeconds(31))).publicarProximo());
+        assertTrue(new DecisaoOutboxWorker(mongo, eventos::add, Clock.offset(clock, Duration.ofSeconds(31)), v2 -> {}).publicarProximo());
         assertEquals(2, doc(o).get("decisao", Document.class).getInteger("tentativas"));
     }
     @Test void leaseDePublicadorInterrompidoDeveExpirar() {
@@ -66,8 +69,8 @@ class DecisaoOutboxIntegrationTest {
         mongo.updateFirst(Query.query(Criteria.where("_id").is(o.getId().toString())), new Update()
                 .set("decisao.leaseToken", "processo-encerrado").set("decisao.leaseAte", Date.from(clock.instant().plusSeconds(30))), "orcamentos");
         var eventos = new ArrayList<OrcamentoDecidido>();
-        assertFalse(new DecisaoOutboxWorker(mongo, eventos::add, clock).publicarProximo());
-        assertTrue(new DecisaoOutboxWorker(mongo, eventos::add, Clock.offset(clock, Duration.ofSeconds(31))).publicarProximo());
+        assertFalse(new DecisaoOutboxWorker(mongo, eventos::add, clock, v2 -> {}).publicarProximo());
+        assertTrue(new DecisaoOutboxWorker(mongo, eventos::add, Clock.offset(clock, Duration.ofSeconds(31)), v2 -> {}).publicarProximo());
     }
     @Test void doisPublicadoresNaoDevemAdquirirMesmoDocumento() throws Exception {
         var o=criar(); o.aprovar(); gateway.salvar(o);
@@ -78,10 +81,10 @@ class DecisaoOutboxIntegrationTest {
             catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new IllegalStateException(ex); }
         };
         try (var pool=java.util.concurrent.Executors.newSingleThreadExecutor()) {
-            var primeiro=pool.submit(() -> new DecisaoOutboxWorker(mongo,lento,clock).publicarProximo());
+            var primeiro=pool.submit(() -> new DecisaoOutboxWorker(mongo,lento,clock, v2 -> {}).publicarProximo());
             try {
                 assertTrue(entrou.await(5,java.util.concurrent.TimeUnit.SECONDS));
-                assertFalse(new DecisaoOutboxWorker(mongo,event -> fail("Publicou duas vezes"),clock).publicarProximo());
+                assertFalse(new DecisaoOutboxWorker(mongo,event -> fail("Publicou duas vezes"),clock, v2 -> {}).publicarProximo());
             } finally { liberar.countDown(); }
             assertTrue(primeiro.get(5,java.util.concurrent.TimeUnit.SECONDS));
         }
@@ -89,6 +92,6 @@ class DecisaoOutboxIntegrationTest {
     @Test void orcamentoManualNaoDeveGerarMensagemParaExecution() {
         var o=new Orcamento(UUID.randomUUID(),List.of(new ItemOrcamento(UUID.randomUUID(),TipoItemOrcamento.SERVICO,"Manual",1,BigDecimal.TEN)),Instant.now());
         gateway.salvar(o); o.aprovar(); gateway.salvar(o);
-        assertFalse(new DecisaoOutboxWorker(mongo,event -> fail("Manual sem reparo"),clock).publicarProximo());
+        assertFalse(new DecisaoOutboxWorker(mongo,event -> fail("Manual sem reparo"),clock, v2 -> {}).publicarProximo());
     }
 }

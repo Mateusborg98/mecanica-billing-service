@@ -60,6 +60,7 @@ public class OrcamentoGatewayImpl implements OrcamentoGateway {
     @Override
     public Optional<Orcamento> buscarPorId(UUID id) {
         return repository.findById(id.toString())
+                .filter(document -> document.itens() != null)
                 .map(mapper::toDomain);
     }
 }

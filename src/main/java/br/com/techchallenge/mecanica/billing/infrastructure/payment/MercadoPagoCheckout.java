@@ -32,13 +32,13 @@ public class MercadoPagoCheckout implements ProvedorCheckout {
             var response=client.send(request,HttpResponse.BodyHandlers.ofString());
             if(response.statusCode()<200 || response.statusCode()>=300) throw new CheckoutIndisponivelException();
             var result=json.readTree(response.body());
-            var id=result.path("id").asText("");
-            var url=URI.create(result.path("checkout_url").asText(""));
+            var id=result.path("id").asString("");
+            var url=URI.create(result.path("checkout_url").asString(""));
             if(id.isBlank() || !"https".equals(url.getScheme()) || !"www.mercadopago.com.br".equals(url.getHost())
                 || url.getUserInfo()!=null || (url.getPort()!=-1 && url.getPort()!=443)
-                || !c.id().toString().equals(result.path("external_reference").asText())
-                || !"BRL".equals(result.path("currency").asText())
-                || c.valorTotal().compareTo(new java.math.BigDecimal(result.path("total_amount").asText()))!=0)
+                || !c.id().toString().equals(result.path("external_reference").asString())
+                || !"BRL".equals(result.path("currency").asString())
+                || c.valorTotal().compareTo(new java.math.BigDecimal(result.path("total_amount").asString()))!=0)
                 throw new CheckoutIndisponivelException();
             return new Checkout(id,url.toString());
         } catch(InterruptedException e) {

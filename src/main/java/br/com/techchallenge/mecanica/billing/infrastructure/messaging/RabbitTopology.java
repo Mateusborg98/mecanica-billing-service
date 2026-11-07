@@ -9,6 +9,7 @@ public class RabbitTopology {
     public static final String ROUTE = "diagnostico.registrado.v1";
     public static final String QUEUE = "billing.diagnostico.v1";
     public static final String DECISAO_ROUTE = "orcamento.decidido.v1";
+    public static final String DECISAO_COM_VALOR_ROUTE = "orcamento.decidido.v2";
     public static final String DECISAO_QUEUE = "execution.orcamento.v1";
     public static final String PAGAMENTO_ROUTE = "pagamento.confirmado.v1";
     public static final String PAGAMENTO_QUEUE = "os.pagamento.v1";
@@ -54,4 +55,27 @@ public class RabbitTopology {
                 BindingBuilder.bind(queue).to(exchange).with(ROUTE),
                 BindingBuilder.bind(deadQueue).to(deadExchange).with(QUEUE));
     }
+    @Bean public Declarables decisaoV2Topology() {
+        var exchange=new DirectExchange("mecanica.events",true,false);
+        var dlx=new DirectExchange("mecanica.dlx",true,false);
+        var queue=QueueBuilder.durable("os.orcamento.v2").deadLetterExchange("mecanica.dlx").deadLetterRoutingKey("os.orcamento.v2").build();
+        var dlq=QueueBuilder.durable("os.orcamento.v2.dlq").build();
+        return new Declarables(exchange,dlx,queue,dlq,BindingBuilder.bind(queue).to(exchange).with(DECISAO_COM_VALOR_ROUTE),
+            BindingBuilder.bind(dlq).to(dlx).with("os.orcamento.v2"));
+    }
+    @Bean public Declarables cancelamentoTopology() {
+        var exchange=new DirectExchange("mecanica.events",true,false);
+        var dlx=new DirectExchange("mecanica.dlx",true,false);
+        var declarations=new java.util.ArrayList<Declarable>();
+        declarations.add(exchange);declarations.add(dlx);
+        for(String name:java.util.List.of("billing.reparo-cancelado.v1")) {
+            var queue=QueueBuilder.durable(name).deadLetterExchange("mecanica.dlx").deadLetterRoutingKey(name).build();
+            var dlq=QueueBuilder.durable(name+".dlq").build();
+            declarations.add(queue);declarations.add(dlq);
+            declarations.add(BindingBuilder.bind(queue).to(exchange).with("reparo.cancelado.v1"));
+            declarations.add(BindingBuilder.bind(dlq).to(dlx).with(name));
+        }
+        return new Declarables(declarations);
+    }
+
 }

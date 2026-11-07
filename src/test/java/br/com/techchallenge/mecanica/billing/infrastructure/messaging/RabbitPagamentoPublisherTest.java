@@ -10,7 +10,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import tools.jackson.databind.json.JsonMapper;
 
-import br.com.techchallenge.mecanica.billing.infrastructure.messaging.*;
 class RabbitPagamentoPublisherTest {
     private final UUID id = UUID.fromString("1b1ef61f-d9f9-3bef-aaf5-308c8b215276");
     private PagamentoConfirmado evento() {

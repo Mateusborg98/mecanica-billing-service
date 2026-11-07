@@ -4,9 +4,10 @@ $binary = Join-Path $tools 'cloudflared.exe'
 $stateFile = Join-Path $tools 'webhook-processes.json'
 if (Test-Path $stateFile) { throw 'Execute encerrar-webhook-https.ps1 antes de abrir outro tunel.' }
 if (!(Test-Path $binary)) { throw 'Cloudflared nao encontrado em LOCALAPPDATA/MecanicaDevTools.' }
-$proxyScript = Join-Path $PSScriptRoot 'webhook_proxy.py'
-$python = (Get-Command python).Source
-$proxy = Start-Process -FilePath $python -ArgumentList @('-u', ('"' + $proxyScript + '"')) -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $tools 'webhook-proxy.log') -RedirectStandardError (Join-Path $tools 'webhook-proxy-error.log')
+$proxyJar = Join-Path $PSScriptRoot '..\tools\webhook-proxy\target\mecanica-webhook-proxy.jar'
+if (!(Test-Path $proxyJar)) { throw 'Compile o proxy com .\mvnw.cmd -f tools/webhook-proxy/pom.xml clean verify' }
+$java = (Get-Command java).Source
+$proxy = Start-Process -FilePath $java -ArgumentList @(('"-Djdk.net.unixdomain.tmpdir=' + $env:SystemRoot + '\Temp"'), '-jar', ('"' + $proxyJar + '"')) -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $tools 'webhook-proxy.log') -RedirectStandardError (Join-Path $tools 'webhook-proxy-error.log')
 $processes = @(@{ Id=$proxy.Id; Started=$proxy.StartTime.ToUniversalTime().ToString('o') })
 $processes | ConvertTo-Json | Set-Content -Encoding UTF8 $stateFile
 Start-Sleep -Seconds 1

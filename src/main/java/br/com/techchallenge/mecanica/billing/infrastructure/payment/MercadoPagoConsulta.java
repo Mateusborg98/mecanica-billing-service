@@ -22,13 +22,13 @@ public class MercadoPagoConsulta implements ConsultaPagamento {
             var response=client.send(req,HttpResponse.BodyHandlers.ofString());
             if(response.statusCode()!=200) throw new CheckoutIndisponivelException();
             var j=new JsonMapper().readTree(response.body());
-            if(!orderId.equals(j.path("id").asText()) || !"online".equals(j.path("type").asText())
-                    || j.path("status").asText("").isBlank() || j.path("currency").asText("").isBlank())
+            if(!orderId.equals(j.path("id").asString()) || !"online".equals(j.path("type").asString())
+                    || j.path("status").asString("").isBlank() || j.path("currency").asString("").isBlank())
                 throw new CheckoutIndisponivelException();
-            return new OrderPagamento(orderId,UUID.fromString(j.path("external_reference").asText()),
-                j.path("status").asText(),j.path("status_detail").asText(),j.path("currency").asText(),
-                new BigDecimal(j.path("total_amount").asText()),new BigDecimal(j.path("total_paid_amount").asText()),
-                Instant.parse(j.path("last_updated_date").asText()));
+            return new OrderPagamento(orderId,UUID.fromString(j.path("external_reference").asString()),
+                j.path("status").asString(),j.path("status_detail").asString(),j.path("currency").asString(),
+                new BigDecimal(j.path("total_amount").asString()),new BigDecimal(j.path("total_paid_amount").asString()),
+                Instant.parse(j.path("last_updated_date").asString()));
         } catch(InterruptedException e) { Thread.currentThread().interrupt(); throw new CheckoutIndisponivelException(); }
         catch(Exception e) { throw new CheckoutIndisponivelException(); }
     }

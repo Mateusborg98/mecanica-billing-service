@@ -1,5 +1,5 @@
 package br.com.techchallenge.mecanica.billing.infrastructure.config;
-import java.net.URI;
+import org.springframework.core.env.Environment;
 import java.net.http.HttpClient;
 import java.time.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,9 +21,9 @@ public class PagamentoConfig {
         return new NotificacaoPagamentoMongo(mongo,clock);
     }
     @Bean public ConfirmarPagamentoUseCase confirmarPagamentoUseCase(MongoTemplate mongo,CobrancaService cobrancas,
-            Clock clock,@Value("${mercado-pago.access-token:}") String token) {
+            Clock clock,@Value("${mercado-pago.access-token:}") String token, Environment environment) {
         var client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).followRedirects(HttpClient.Redirect.NEVER).build();
-        return new ConfirmarPagamentoUseCase(new MercadoPagoConsulta(client,URI.create("https://api.mercadopago.com/v1/orders"),token),
+        return new ConfirmarPagamentoUseCase(new MercadoPagoConsulta(client,EndpointMercadoPago.resolver(environment,token),token),
             cobrancas,new CheckoutMongoGateway(mongo),new PagamentoMongoGateway(mongo),clock);
     }
     @Bean

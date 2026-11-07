@@ -52,7 +52,7 @@ class CobrancaMongoGatewayTest {
         assertThrows(DataAccessResourceFailureException.class,()->gateway.criarOuRecuperar(input,agora));
     }
     @Test void ausenciaDepoisDeUpdatePerdidoNaoDeveSerTratadaComoSucesso() {
-        when(mongo.findById(id.toString(),OrcamentoDocument.class)).thenReturn(doc("APROVADO"),null);
+        when(mongo.findById(id.toString(),OrcamentoDocument.class)).thenReturn(doc("APROVADO")).thenReturn(null);
         assertThrows(IllegalStateException.class,()->gateway.criarOuRecuperar(input,agora));
     }
     @Test void deveRejeitarOrcamentoAusentePendenteOuSemCorrelacao() {

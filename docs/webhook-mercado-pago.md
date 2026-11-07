@@ -50,7 +50,7 @@ Nao copie credenciais para este documento, testes ou mensagens.
 
 Para o teste remoto ainda e necessario disponibilizar uma URL HTTPS que encaminhe exclusivamente
 `POST /webhooks/mercado-pago` ao Billing. Localhost nao e acessivel pelo Mercado Pago. Nao encaminhe
-a API inteira, pois seus endpoints administrativos ainda nao possuem autenticacao nesta etapa.
+a API inteira. As rotas administrativas agora exigem JWT de operador; o tunel continua restrito ao webhook. Veja seguranca-e-permissoes.md.
 No painel do Mercado Pago selecione o evento **Order (Mercado Pago)**. A chave secreta gerada nessa
 configuracao e a usada em MERCADO_PAGO_WEBHOOK_SECRET. Um simulador com ID ficticio pode retornar
 200 por recebimento duravel, mas nao confirma pagamento: a consulta da order real precisa funcionar.
@@ -84,6 +84,7 @@ fora do Git. O executavel foi baixado do release oficial e conferido contra o SH
 A instalacao e local; nao e servico do Windows. Quick Tunnel nao exige conta ou recursos AWS.
 
 ```powershell
+.\mvnw.cmd -f tools/webhook-proxy/pom.xml clean verify
 .\scripts\iniciar-webhook-https.ps1
 ```
 
@@ -104,9 +105,18 @@ Para encerrar o acesso publico, sem parar outros projetos:
 .\scripts\encerrar-webhook-https.ps1
 ```
 
-Testes do proxy: `python -m unittest discover -s scripts -p test_webhook_proxy.py -v`.
-Quatro testes validam bloqueio de outras rotas/metodos, repasse exato do webhook, tamanho de corpo,
+Testes do proxy: `.\mvnw.cmd -f tools/webhook-proxy/pom.xml clean verify`.
+Sete testes Java com HTTP local validam bloqueio de outras rotas/metodos, repasse exato do webhook, tamanho de corpo,
 headers obrigatorios e recusa de redirecionamentos do backend. Este proxy e destinado apenas
 as sessoes locais de estudo; nao substitui o ingress de producao.
 
 Referencia: https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/
+
+## Proxy em Java
+
+O projeto Maven `tools/webhook-proxy` usa Java 21 e o servidor HTTP do JDK, sem dependências de produção externas. O iniciador PowerShell executa `java -jar tools/webhook-proxy/target/mecanica-webhook-proxy.jar`; portas e restrições continuam iguais. O proxy limita corpo, rota, método e cabeçalhos, não segue redirecionamentos e não repassa corpo/cabeçalhos da resposta do Billing. O Billing continua responsável por validar criptograficamente a assinatura.
+
+A CI executa os testes do projeto auxiliar separadamente e publica os relatórios JUnit. Os testes usam um Billing simulado em porta efêmera: não comprovam integração financeira real. Nenhum túnel público precisa ser aberto para executá-los.
+Validação Java de 04/11/2026: 7 testes HTTP aprovados; JAR final iniciado em localhost, rota administrativa retornou 404 e webhook sem assinatura retornou 401. Processo de teste encerrado, sem abrir túnel público.
+
+Neste Windows, se os testes apresentarem `Unable to establish loopback connection` por caminho temporário longo do JDK, execute antes: `$env:JAVA_TOOL_OPTIONS="-Djdk.net.unixdomain.tmpdir=$env:SystemRoot\Temp"`. O iniciador PowerShell já passa essa opção para o proxy.

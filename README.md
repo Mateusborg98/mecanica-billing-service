@@ -64,3 +64,34 @@ Geracao idempotente de link via Checkout Pro / Orders: [guia e validacao](docs/c
 ## Evento de pagamento e proximas validacoes
 
 [Publicacao confiavel do pagamento](docs/pagamento-confirmado-rabbitmq.md) e [pendencias para o fim de semana](docs/pendencias-validacao-2026-10-27.md). O consumidor da OS e a liberacao da entrega continuam pendentes.
+
+[Progresso e valor da OS](docs/progresso-os.md) — contratos, validação integrada e limitações atuais.
+
+
+## Saga e recuperação de falhas
+
+A integração usa Saga por coreografia. Consulte [etapas, compensação de reservas, roteiro de falha e limites pendentes](docs/saga.md).
+
+
+## Cancelamento integrado
+
+Cancelamentos antes do início propagam para OS e Billing, liberam reservas e toleram reentregas. Veja [regras, contrato e roteiro de validação](docs/cancelamento-integrado.md).
+
+- [Reprocessamento auditável de DLQ](docs/reprocessamento-dlq.md): operação local, limites e evidências.
+
+- [Análise estática e critérios de aprovação](docs/qualidade-estatica.md): regras PMD, execução e relatórios.
+
+## Validação externa pendente
+
+[Roteiro de pagamento real de teste](docs/roteiro-pagamento-real.md), incluindo a opção -Integrado do launcher para confirmar pagamento e liberar entrega nos três serviços.
+
+[Validação local de 05/11/2026](docs/validacao-2026-11-05.md): OS, Billing e BDD distribuído; limites e pendências explícitos.
+
+## Permissões de acesso
+
+As operações administrativas exigem JWT de OPERADOR ou ADMINISTRADOR. Consulte [a matriz de permissões e configuração local](docs/seguranca-e-permissoes.md). As rotas públicas de acompanhamento, orçamento e checkout permanecem conforme o contrato documentado.
+
+
+## Preparação de implantação da Fase 4
+
+Os [manifests Kubernetes](k8s/README.md) e o workflow CD estão preparados. A infraestrutura compartilhada e a estimativa de custos ficam em mecanica-os-service/infra/fase4/README.md. A preparação local não comprova provisionamento AWS ou execução remota do CD.
