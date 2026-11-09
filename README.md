@@ -1,97 +1,37 @@
-# Mecânica Billing Service — Tech Challenge Fase 4
+# Mecânica Billing Service — Fase 4
 
-Microsserviço responsável pelos orçamentos e pagamentos das ordens de serviço da oficina mecânica.
+Microsserviço Java 21 / Spring Boot responsável pelos orçamentos e pagamentos. Possui banco MongoDB próprio e integra OS e Execution por eventos RabbitMQ, sem acessar seus bancos.
 
-Este projeto faz parte da arquitetura de microsserviços desenvolvida para o Tech Challenge da Fase 4.
+## Fluxo implementado
 
-## Responsabilidades
+Diagnóstico gera orçamento idempotente. O operador pode solicitar o envio por SMTP; o cliente consulta o link público e aprova ou recusa. Aprovação libera a execução. A conclusão cria a cobrança; o checkout Mercado Pago gera o link de pagamento. O webhook autenticado consulta o provedor e publica o pagamento confirmado para a OS, que exige pagamento antes da entrega.
 
-- Gerar orçamentos com base nos itens identificados durante o diagnóstico.
-- Calcular e registrar os valores de peças e serviços.
-- Manter as versões dos orçamentos.
-- Disponibilizar o orçamento para aprovação ou recusa do cliente.
-- Integrar o processamento de pagamentos com o Mercado Pago.
-- Registrar cobranças e acompanhar a confirmação dos pagamentos.
-- Comunicar os resultados das operações ao serviço de ordens de serviço.
+As operações administrativas exigem JWT de OPERADOR ou ADMINISTRADOR. Links de orçamento, aprovação e checkout são públicos conforme a decisão do projeto. O webhook possui autenticação própria. Consulte [permissões](docs/seguranca-e-permissoes.md).
 
-## Dados sob responsabilidade do serviço
+## Arquitetura e recuperação
 
-- Orçamentos e suas versões.
-- Itens e valores registrados em cada orçamento.
-- Aprovações e recusas.
-- Cobranças.
-- Pagamentos e identificadores da integração com o Mercado Pago.
+A Saga usa coreografia para manter os serviços independentes: cada participante confirma sua transação local e comunica o resultado por eventos. Outbox, confirmações do broker, consumidores idempotentes e reprocessamento de DLQ permitem retomar falhas sem duplicar os efeitos de negócio.
 
-Os itens do orçamento preservam as descrições e os preços utilizados na proposta, evitando que alterações posteriores no catálogo modifiquem valores já acordados.
+Recusa/cancelamento antes da execução cancela o orçamento e libera reservas. Falhas definitivas ficam pendentes para correção e reprocessamento; o operador pode cancelar explicitamente antes do início. Após execução física, a recuperação prossegue para concluir cobrança/pagamento, sem simular desfazimento do reparo. Consulte [Saga](docs/saga.md), [política de falhas](docs/politica-falhas-saga.md) e [DLQ](docs/reprocessamento-dlq.md).
 
-## Integração com os demais serviços
+## Execução e testes
 
-- mecanica-os-service: identificação da OS e coordenação do fluxo de orçamento e pagamento.
-- mecanica-execution-service: informações do diagnóstico e dos itens necessários ao reparo, conforme os contratos de integração.
+Use Java 21 e o Maven Wrapper: `./mvnw clean verify` (PowerShell: `.\mvnw.cmd clean verify`). A verificação inclui testes, JaCoCo com mínimo de 80% e PMD. Os testes com MongoDB real exigem `RUN_MONGO_TESTS=true` e `TEST_MONGO_URI` apontando para um banco de teste; nunca use dados de produção.
 
-Cada microsserviço é responsável por seus próprios dados. A comunicação entre eles ocorre por contratos de API e mensagens, sem acesso direto ao banco de outro serviço.
+O BDD distribuído está no repositório mecanica-execution-service, em `tests/fluxo-distribuido`, e utiliza os três serviços, bancos e RabbitMQ em Docker, com provedor de pagamento simulado. Não substitui a compra real de teste.
 
-## Status do projeto
+## Guias
 
-Em desenvolvimento. As responsabilidades descritas representam a arquitetura planejada para a Fase 4.
-## Avanço de 14/10/2026
+- [Envio SMTP e página de aprovação](docs/envio-orcamento-smtp.md).
+- [Integração diagnóstico/orçamento](docs/integracao-diagnostico-rabbitmq.md).
+- [Decisão do orçamento](docs/decisao-orcamento-rabbitmq.md).
+- [Checkout Mercado Pago](docs/checkout-mercado-pago-orders.md) e [webhook](docs/webhook-mercado-pago.md).
+- [Pagamento confirmado](docs/pagamento-confirmado-rabbitmq.md).
+- [Roteiro de compra real de teste](docs/roteiro-pagamento-real.md).
+- [Kubernetes](k8s/README.md) e [qualidade](docs/qualidade-estatica.md).
 
-Proteção atômica contra aprovação/recusa concorrentes, retorno HTTP 409, testes com
-MongoDB real, Dockerfile e CI com JaCoCo e mínimo de 80% de cobertura de linhas.
-O CI foi criado localmente; sua execução no GitHub depende de publicar estas alterações.
-Consulte [a decisão de fluxo](docs/decisoes-fluxo.md).
+## Entrega e limites
 
-Pagamento, Mercado Pago e Saga completa ainda estão pendentes. O primeiro fluxo de mensageria, diagnóstico para orçamento, já foi implementado.
+CI e CD possuem workflows próprios; os manifests Kubernetes estão preparados. A infraestrutura compartilhada está em `mecanica-os-service/infra/fase4`. Documentos de validação com data registram evidências históricas, não o estado atual completo.
 
-## Integração de diagnóstico e orçamento — 16/10/2026
-
-Execution publica diagnósticos via outbox/RabbitMQ; Billing cria orçamentos de forma
-idempotente. Veja [fluxo, execução local e limites](docs/integracao-diagnostico-rabbitmq.md).
-O retorno de aprovação/recusa está implementado; a Saga completa permanece pendente.
-
-## Aprovação e recusa integradas
-
-O Billing publica a decisão do orçamento por RabbitMQ. O Execution libera o reparo aprovado ou cancela o recusado, devolvendo reservas sem duplicidade. Consulte [o fluxo, a validação e os limites](docs/decisao-orcamento-rabbitmq.md).
-
-## Conclusão e cobrança pendente
-
-A conclusão do reparo chega ao Billing por RabbitMQ e cria uma única cobrança interna PENDENTE, com o valor do orçamento aprovado. Não há cobrança real no Mercado Pago nesta etapa. Consulte [fluxo, falhas e demonstração](docs/conclusao-e-cobranca.md).
-
-## Checkout Mercado Pago
-
-Geracao idempotente de link via Checkout Pro / Orders: [guia e validacao](docs/checkout-mercado-pago-orders.md). Confirmacao automatica implementada com [webhook autenticado e consulta ao provedor](docs/webhook-mercado-pago.md); validacao remota e integracao com a entrega ainda pendentes.
-
-## Evento de pagamento e proximas validacoes
-
-[Publicacao confiavel do pagamento](docs/pagamento-confirmado-rabbitmq.md) e [pendencias para o fim de semana](docs/pendencias-validacao-2026-10-27.md). O consumidor da OS e a liberacao da entrega continuam pendentes.
-
-[Progresso e valor da OS](docs/progresso-os.md) — contratos, validação integrada e limitações atuais.
-
-
-## Saga e recuperação de falhas
-
-A integração usa Saga por coreografia. Consulte [etapas, compensação de reservas, roteiro de falha e limites pendentes](docs/saga.md).
-
-
-## Cancelamento integrado
-
-Cancelamentos antes do início propagam para OS e Billing, liberam reservas e toleram reentregas. Veja [regras, contrato e roteiro de validação](docs/cancelamento-integrado.md).
-
-- [Reprocessamento auditável de DLQ](docs/reprocessamento-dlq.md): operação local, limites e evidências.
-
-- [Análise estática e critérios de aprovação](docs/qualidade-estatica.md): regras PMD, execução e relatórios.
-
-## Validação externa pendente
-
-[Roteiro de pagamento real de teste](docs/roteiro-pagamento-real.md), incluindo a opção -Integrado do launcher para confirmar pagamento e liberar entrega nos três serviços.
-
-[Validação local de 05/11/2026](docs/validacao-2026-11-05.md): OS, Billing e BDD distribuído; limites e pendências explícitos.
-
-## Permissões de acesso
-
-As operações administrativas exigem JWT de OPERADOR ou ADMINISTRADOR. Consulte [a matriz de permissões e configuração local](docs/seguranca-e-permissoes.md). As rotas públicas de acompanhamento, orçamento e checkout permanecem conforme o contrato documentado.
-
-
-## Preparação de implantação da Fase 4
-
-Os [manifests Kubernetes](k8s/README.md) e o workflow CD estão preparados. A infraestrutura compartilhada e a estimativa de custos ficam em mecanica-os-service/infra/fase4/README.md. A preparação local não comprova provisionamento AWS ou execução remota do CD.
+Permanecem externas à validação local: compra real de teste Mercado Pago, recebimento via SMTP real, deploy/CD em AWS e evidências de Datadog no ambiente entregue. Preparação de código e manifests não comprova essas etapas.

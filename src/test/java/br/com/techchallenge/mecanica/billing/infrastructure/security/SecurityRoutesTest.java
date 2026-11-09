@@ -65,6 +65,13 @@ class SecurityRoutesTest {
         }
     }
     @Test
+    void notificationStatusIsAdministrative() throws Exception {
+        String path = "/orcamentos/id/notificacao";
+        mvc.perform(get(path)).andExpect(status().isUnauthorized());
+        mvc.perform(get(path).header("Authorization", bearer("CLIENTE"))).andExpect(status().isForbidden());
+        mvc.perform(get(path).header("Authorization", bearer("OPERADOR"))).andExpect(status().isOk());
+    }
+    @Test
     void invalidExpiredAndWrongIssuerTokensAreRejected() throws Exception {
         for (String token : new String[]{"invalid", token("OPERADOR", "other-issuer", Instant.now().plusSeconds(60), KEY),
                 token("OPERADOR", ISSUER, Instant.now().minusSeconds(60), KEY),
@@ -83,16 +90,16 @@ class SecurityRoutesTest {
     }
     @Test
     void customerLinksAndSignedWebhookRemainPublicButOnlyForTheirMethods() throws Exception {
-        for (String path : new String[]{"/orcamentos/id", "/cobrancas/id"}) {
+        for (String path : new String[]{"/orcamentos/id", "/orcamentos/id/aprovacao", "/cobrancas/id"}) {
             mvc.perform(get(path)).andExpect(status().isOk());
             mvc.perform(delete(path)).andExpect(status().isUnauthorized());
         }
-        for (String path : new String[]{"/orcamentos/id/aprovar", "/orcamentos/id/recusar", "/cobrancas/id/checkout", "/webhooks/mercado-pago"}) {
+        for (String path : new String[]{"/orcamentos/id/aprovacao", "/orcamentos/id/aprovar", "/orcamentos/id/recusar", "/cobrancas/id/checkout", "/webhooks/mercado-pago"}) {
             mvc.perform(post(path)).andExpect(status().isOk());
             mvc.perform(put(path)).andExpect(status().isUnauthorized());
         }
     }
-    private static final String[] ADMIN_PATHS = new String[]{"/orcamentos", "/admin/operacao-futura"};
+    private static final String[] ADMIN_PATHS = new String[]{"/orcamentos/id/notificacao", "/orcamentos", "/admin/operacao-futura"};
     private static String bearer(String role) {
         return "Bearer " + token(role, ISSUER, Instant.now().plusSeconds(120), KEY);
     }

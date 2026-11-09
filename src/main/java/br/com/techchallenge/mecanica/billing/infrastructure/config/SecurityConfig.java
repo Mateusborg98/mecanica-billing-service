@@ -24,8 +24,8 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**",
                     "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/orcamentos/{id}", "/cobrancas/{id}").permitAll()
-                .requestMatchers(HttpMethod.POST, "/orcamentos/{id}/aprovar", "/orcamentos/{id}/recusar",
+                .requestMatchers(HttpMethod.GET, "/orcamentos/{id}", "/orcamentos/{id}/aprovacao", "/cobrancas/{id}").permitAll()
+                .requestMatchers(HttpMethod.POST, "/orcamentos/{id}/aprovar", "/orcamentos/{id}/recusar", "/orcamentos/{id}/aprovacao",
                     "/cobrancas/{id}/checkout", "/webhooks/mercado-pago").permitAll()
                 .anyRequest().hasAnyRole("OPERADOR", "ADMINISTRADOR"))
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
