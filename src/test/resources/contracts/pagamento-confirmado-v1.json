@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "eventType": "PagamentoConfirmado",
+  "eventId": "1b1ef61f-d9f9-3bef-aaf5-308c8b215276",
+  "cobrancaId": "1b1ef61f-d9f9-3bef-aaf5-308c8b215276",
+  "ordemId": "22222222-2222-2222-2222-222222222222",
+  "reparoId": "11111111-1111-1111-1111-111111111111",
+  "valor": 51.0,
+  "moeda": "BRL",
+  "confirmadoEm": "2026-10-27T15:00:00Z"
+}

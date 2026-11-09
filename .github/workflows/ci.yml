@@ -1,0 +1,56 @@
+name: Billing CI
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    # MongoDB 8.0: use the runner with kernel 6.8 until SERVER-121912 restrictions are resolved.
+    runs-on: ubuntu-22.04
+    services:
+      mongodb:
+        image: mongo:8.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: billing_local
+          MONGO_INITDB_ROOT_PASSWORD: billing_local_password
+        ports: ['27018:27017']
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'quit(db.runCommand({ping:1}).ok ? 0 : 1)'"
+          --health-interval 5s --health-timeout 5s --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: chmod +x mvnw
+      - run: ./mvnw -B -f tools/webhook-proxy/pom.xml clean verify
+      - run: ./mvnw -B clean verify
+        env:
+          RUN_MONGO_TESTS: 'true'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: billing-test-reports
+          path: |
+            target/surefire-reports
+            target/site/jacoco
+            target/pmd.xml
+            target/reports/pmd.html
+            tools/webhook-proxy/target/surefire-reports
+            tools/webhook-proxy/target/pmd.xml
+            tools/webhook-proxy/target/reports/pmd.html
+      - run: docker build -t mecanica-billing-service:ci .
+
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Kubernetes manifests
+        run: |
+          set -euo pipefail
+          kubectl kustomize k8s > /tmp/app.yaml
+          docker run --rm -i ghcr.io/yannh/kubeconform:v0.7.0 -strict -summary -kubernetes-version 1.36.0 < /tmp/app.yaml
