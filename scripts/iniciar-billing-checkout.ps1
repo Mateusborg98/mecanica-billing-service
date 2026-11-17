@@ -15,6 +15,24 @@ if ([string]::IsNullOrWhiteSpace($env:JWT_PUBLIC_KEY)) {
     $env:JWT_PUBLIC_KEY=$line.Substring(27,$line.Length-28)
     $env:JWT_ISSUER='mecanica-integration-local'
 }
+# Only process environment variables are used; no saved SMTP credential is loaded.
+if ($env:NOTIFICACOES_ENABLED -eq 'true') {
+    foreach ($name in @('SPRING_MAIL_HOST','SPRING_MAIL_PORT','MAIL_FROM','BILLING_PUBLIC_BASE_URL')) {
+        if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name,'Process'))) {
+            throw "SMTP habilitado: configure $name nesta mesma sessao e reinicie."
+        }
+    }
+    if ($env:SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH -eq 'true') {
+        foreach ($name in @('SPRING_MAIL_USERNAME','SPRING_MAIL_PASSWORD')) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name,'Process'))) {
+                throw "SMTP autenticado: configure $name nesta mesma sessao e reinicie."
+            }
+        }
+    }
+    Write-Host 'SMTP habilitado. POST /orcamentos/{id}/notificacao agenda o envio; GET na mesma rota mostra status, ultimoErro e proximaTentativa.'
+} else {
+    Write-Host 'SMTP DESABILITADO: nenhum e-mail sera enviado. Para testar, configure NOTIFICACOES_ENABLED=true e as variaveis SMTP nesta sessao.'
+}
 $repo = Split-Path $PSScriptRoot -Parent
 $compose = Join-Path (Split-Path $repo -Parent) "mecanica-execution-service/compose.integration.yaml"
 docker compose -f $compose up -d --wait mongodb
@@ -47,6 +65,6 @@ $env:SERVER_ADDRESS = "127.0.0.1"
 $env:JAVA_TOOL_OPTIONS = "$env:JAVA_TOOL_OPTIONS -Djdk.net.unixdomain.tmpdir=$env:SystemRoot\Temp"
 Push-Location $repo
 try {
-    & .\mvnw.cmd spring-boot:run
+    & .\mvnw.cmd clean spring-boot:run
     if ($LASTEXITCODE -ne 0) { throw "Billing encerrou com erro." }
 } finally { Pop-Location }

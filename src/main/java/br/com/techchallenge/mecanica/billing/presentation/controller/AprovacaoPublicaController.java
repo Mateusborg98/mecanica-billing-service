@@ -7,6 +7,8 @@ import org.springframework.web.util.HtmlUtils;
 import br.com.techchallenge.mecanica.billing.application.usecase.*;
 import br.com.techchallenge.mecanica.billing.domain.orcamento.StatusOrcamento;
 import br.com.techchallenge.mecanica.billing.domain.exception.RegraNegocioException;
+@io.swagger.v3.oas.annotations.tags.Tag(name = "AprovacaoPublicaController")
+@io.swagger.v3.oas.annotations.security.SecurityRequirements
 @RestController
 @RequestMapping("/orcamentos/{id}/aprovacao")
 public class AprovacaoPublicaController {
@@ -16,6 +18,7 @@ public class AprovacaoPublicaController {
     public AprovacaoPublicaController(BuscarOrcamentoPorIdUseCase buscar,AprovarOrcamentoUseCase aprovar,RecusarOrcamentoUseCase recusar) {
         this.buscar=buscar;this.aprovar=aprovar;this.recusar=recusar;
     }
+    @io.swagger.v3.oas.annotations.Operation(summary = "Abrir pagina publica de aprovacao")
     @GetMapping(produces=MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> pagina(@PathVariable UUID id) {
         var o=buscar.executar(id);var itens=new StringBuilder();
@@ -34,6 +37,7 @@ public class AprovacaoPublicaController {
             .header("Content-Security-Policy","default-src 'none'; form-action 'self'; frame-ancestors 'none'")
             .contentType(MediaType.TEXT_HTML).body(html);
     }
+    @io.swagger.v3.oas.annotations.Operation(summary = "Registrar decisao pelo formulario publico")
     @PostMapping public ResponseEntity<Void> decidir(@PathVariable UUID id,@RequestParam String decisao) {
         switch(decisao) {case "APROVAR" -> aprovar.executar(id);case "RECUSAR" -> recusar.executar(id);
             default -> throw new RegraNegocioException("Escolha aprovar ou recusar.");}

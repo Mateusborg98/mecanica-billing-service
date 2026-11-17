@@ -28,7 +28,9 @@ public final class NotificacaoOrcamentoMongoOutbox implements NotificacaoOrcamen
     public Situacao buscar(UUID id) {
         var doc=mongo.findById(id.toString(),Document.class,COLLECTION);
         if(doc==null) throw new OrcamentoNaoEncontradoException(id);
-        return new Situacao(id,doc.getString("status"),doc.getInteger("tentativas"));
+        var proxima = doc.getDate("proximaTentativa");
+        return new Situacao(id,doc.getString("status"),doc.getInteger("tentativas"),doc.getString("ultimoErro"),
+            "PENDENTE".equals(doc.getString("status")) && proxima != null ? proxima.toInstant() : null);
     }
     public Pendente reservar(Instant agora) {
         var criteria=new Criteria().andOperator(Criteria.where("status").is("PENDENTE"),
@@ -45,7 +47,12 @@ public final class NotificacaoOrcamentoMongoOutbox implements NotificacaoOrcamen
     }
     public void reagendar(Pendente p,Instant agora,RuntimeException erro) {
         mongo.updateFirst(reserva(p),new Update().set("proximaTentativa",Date.from(agora.plusSeconds(30)))
-            .set("ultimoErro",erro.getClass().getSimpleName()).unset("leaseToken").unset("leaseAte"),COLLECTION);
+            .set("ultimoErro",codigoErro(erro)).unset("leaseToken").unset("leaseAte"),COLLECTION);
+    }
+    static String codigoErro(RuntimeException erro) {
+        if (erro instanceof org.springframework.mail.MailAuthenticationException) return "AUTENTICACAO_SMTP";
+        if (erro instanceof org.springframework.mail.MailException) return "TRANSPORTE_SMTP";
+        return "PROCESSAMENTO_NOTIFICACAO";
     }
     private Query reserva(Pendente p) {return Query.query(Criteria.where("_id").is(p.id().toString()).and("leaseToken").is(p.token()));}
 }

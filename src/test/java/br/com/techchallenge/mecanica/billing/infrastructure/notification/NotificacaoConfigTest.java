@@ -16,6 +16,24 @@ class NotificacaoConfigTest {
         .withBean(MongoTemplate.class, () -> mock(MongoTemplate.class))
         .withBean(BuscarOrcamentoPorIdUseCase.class, () -> mock(BuscarOrcamentoPorIdUseCase.class));
 
+    @Test void variaveisDaSessaoConfiguramAsPropriedadesSmtpComPontos() {
+        new ApplicationContextRunner()
+            .withInitializer(new org.springframework.boot.test.context.ConfigDataApplicationContextInitializer())
+            .withConfiguration(org.springframework.boot.autoconfigure.AutoConfigurations.of(
+                org.springframework.boot.mail.autoconfigure.MailSenderAutoConfiguration.class))
+            .withSystemProperties("SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true",
+                "SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true",
+                "SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED=true")
+            .withPropertyValues("spring.mail.host=127.0.0.1", "spring.mail.port=2525")
+            .run(context -> {
+                assertThat(context).hasNotFailed();
+                var sender=context.getBean(org.springframework.mail.javamail.JavaMailSenderImpl.class);
+                assertThat(sender.getJavaMailProperties()).containsEntry("mail.smtp.auth","true")
+                    .containsEntry("mail.smtp.starttls.enable","true")
+                    .containsEntry("mail.smtp.starttls.required","true");
+                assertThat(sender.getDefaultEncoding()).isEqualTo("UTF-8");
+            });
+    }
     @Test void desabilitadoNaoExigeServidorSmtp() {
         runner.run(context -> assertThat(context).hasNotFailed().doesNotHaveBean(EnvioOrcamentoWorker.class));
     }

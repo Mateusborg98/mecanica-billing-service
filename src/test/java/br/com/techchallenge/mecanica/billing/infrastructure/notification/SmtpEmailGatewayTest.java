@@ -22,7 +22,7 @@ class SmtpEmailGatewayTest {
             assertTrue(message.getContent().toString().contains("https://oficina.example/orcamentos/id/aprovacao"));
         }
     }
-    private String receber(ServerSocket server) throws Exception {
+    static String receber(ServerSocket server) throws Exception {
         try(var socket=server.accept()) {
             socket.setSoTimeout(5000);var input=new BufferedReader(new InputStreamReader(socket.getInputStream(),StandardCharsets.US_ASCII));
             var output=new PrintWriter(socket.getOutputStream(),true,StandardCharsets.US_ASCII);output.print("220 localhost test\r\n");output.flush();
@@ -35,6 +35,31 @@ class SmtpEmailGatewayTest {
                 output.flush();
             }
             return body.toString();
+        }
+    }
+    @Test void rejeicao535NaoPodeSerConfundidaComEnvio() throws Exception {
+        try(var server=new ServerSocket();var pool=Executors.newSingleThreadExecutor()) {
+            server.bind(new InetSocketAddress("127.0.0.1",0));server.setSoTimeout(5000);
+            var resposta=pool.submit(()->{
+                try(var socket=server.accept()) {
+                    socket.setSoTimeout(5000);
+                    var input=new BufferedReader(new InputStreamReader(socket.getInputStream(),StandardCharsets.US_ASCII));
+                    var output=new PrintWriter(socket.getOutputStream(),true,StandardCharsets.US_ASCII);
+                    output.print("220 localhost test\r\n");output.flush();
+                    assertTrue(input.readLine().startsWith("EHLO"));
+                    output.print("250-localhost\r\n250 AUTH PLAIN\r\n");output.flush();
+                    assertTrue(input.readLine().startsWith("AUTH"));
+                    output.print("535 5.7.8 Authentication rejected\r\n");output.flush();
+                }
+                return true;
+            });
+            var sender=new JavaMailSenderImpl();sender.setHost("127.0.0.1");sender.setPort(server.getLocalPort());
+            sender.setUsername("teste");sender.setPassword("senha-ficticia");
+            sender.getJavaMailProperties().setProperty("mail.smtp.auth","true");
+            sender.getJavaMailProperties().setProperty("mail.smtp.timeout","5000");
+            assertThrows(org.springframework.mail.MailAuthenticationException.class,
+                ()->new SmtpEmailGateway(sender,"oficina@example.test").enviar("cliente@example.test","Teste"));
+            assertTrue(resposta.get(5,TimeUnit.SECONDS));
         }
     }
     @Test void remetenteInvalidoNaoPodeSerConfigurado() {

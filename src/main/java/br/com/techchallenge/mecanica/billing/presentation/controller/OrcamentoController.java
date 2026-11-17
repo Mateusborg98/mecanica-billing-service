@@ -20,6 +20,7 @@ import br.com.techchallenge.mecanica.billing.presentation.dto.OrcamentoResponse;
 import br.com.techchallenge.mecanica.billing.presentation.mapper.OrcamentoPresentationMapper;
 import jakarta.validation.Valid;
 
+@io.swagger.v3.oas.annotations.tags.Tag(name = "OrcamentoController")
 @RestController
 @RequestMapping("/orcamentos")
 public class OrcamentoController {
@@ -44,6 +45,8 @@ public class OrcamentoController {
         this.mapper = mapper;
     }
 
+    @io.swagger.v3.oas.annotations.Operation(summary = "Criar orcamento (normalmente gerado pelo diagnostico)")
+
     @PostMapping
     public ResponseEntity<OrcamentoResponse> criar(
             @Valid @RequestBody CriarOrcamentoRequest request) {
@@ -55,16 +58,22 @@ public class OrcamentoController {
                 .body(mapper.toResponse(orcamento));
     }
 
+    @io.swagger.v3.oas.annotations.security.SecurityRequirements
+    @io.swagger.v3.oas.annotations.Operation(summary = "Consultar orcamento")
     @GetMapping("/{id}")
     public OrcamentoResponse buscar(@PathVariable UUID id) {
         return mapper.toResponse(buscarUseCase.executar(id));
     }
 
+    @io.swagger.v3.oas.annotations.security.SecurityRequirements
+    @io.swagger.v3.oas.annotations.Operation(summary = "Aprovar orcamento e liberar execucao por evento")
     @PostMapping("/{id}/aprovar")
     public OrcamentoResponse aprovar(@PathVariable UUID id) {
         return mapper.toResponse(aprovarUseCase.executar(id));
     }
 
+    @io.swagger.v3.oas.annotations.security.SecurityRequirements
+    @io.swagger.v3.oas.annotations.Operation(summary = "Recusar orcamento e iniciar compensacao por evento")
     @PostMapping("/{id}/recusar")
     public OrcamentoResponse recusar(@PathVariable UUID id) {
         return mapper.toResponse(recusarUseCase.executar(id));

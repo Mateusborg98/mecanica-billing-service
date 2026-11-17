@@ -6,6 +6,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import br.com.techchallenge.mecanica.billing.application.gateway.NotificacaoPagamentoGateway;
 import br.com.techchallenge.mecanica.billing.infrastructure.payment.*;
+@io.swagger.v3.oas.annotations.tags.Tag(name = "MercadoPagoWebhookController")
+@io.swagger.v3.oas.annotations.security.SecurityRequirements
 @RestController
 @ConditionalOnProperty(name="mercado-pago.webhook.enabled",havingValue="true")
 public class MercadoPagoWebhookController {
@@ -14,6 +16,7 @@ public class MercadoPagoWebhookController {
     public MercadoPagoWebhookController(AssinaturaMercadoPago assinatura,NotificacaoPagamentoGateway inbox) {
         this.assinatura=assinatura; this.inbox=inbox;
     }
+    @io.swagger.v3.oas.annotations.Operation(summary = "Receber notificacao assinada e verificar pagamento no Mercado Pago")
     @PostMapping("/webhooks/mercado-pago")
     public ResponseEntity<Void> receber(@RequestParam MultiValueMap<String,String> query,@RequestHeader HttpHeaders headers) {
         var orderId=unico(query.get("data.id"));

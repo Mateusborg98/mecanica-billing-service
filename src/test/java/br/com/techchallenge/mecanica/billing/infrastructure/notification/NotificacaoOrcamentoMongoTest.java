@@ -30,6 +30,42 @@ class NotificacaoOrcamentoMongoTest {
     }
     @AfterEach void cleanup(){if(mongo!=null)mongo.getDb().drop();if(client!=null)client.close();}
     void agendar(){enviar.executar(o.getId(),"cliente@example.test");}
+    @Test void falhaDeAutenticacaoFicaVisivelERetomaComCredencialCorrigida() {
+        agendar();
+        EnvioEmailGateway invalido=(destino,texto)->{throw new org.springframework.mail.MailAuthenticationException("segredo-nao-deve-vazar");};
+        assertFalse(new EnvioOrcamentoWorker(outbox,invalido,buscar,Clock.fixed(agora,ZoneOffset.UTC)).enviarProximo());
+        var situacao=outbox.buscar(o.getId());
+        assertEquals("AUTENTICACAO_SMTP",situacao.ultimoErro());
+        assertEquals(agora.plusSeconds(30),situacao.proximaTentativa());
+        var valido=mock(EnvioEmailGateway.class);
+        assertTrue(new EnvioOrcamentoWorker(new NotificacaoOrcamentoMongoOutbox(mongo),valido,buscar,
+            Clock.fixed(agora.plusSeconds(31),ZoneOffset.UTC)).enviarProximo());
+        assertEquals("ENVIADO",outbox.buscar(o.getId()).status());
+        assertNull(outbox.buscar(o.getId()).ultimoErro());
+        assertNull(outbox.buscar(o.getId()).proximaTentativa());
+        verify(valido).enviar(eq("cliente@example.test"),contains("/aprovacao"));
+    }
+    @Test void codigosDeFalhaNaoExpoemMensagemDoProvedor() {
+        assertEquals("TRANSPORTE_SMTP",NotificacaoOrcamentoMongoOutbox.codigoErro(new org.springframework.mail.MailSendException("segredo")));
+        assertEquals("PROCESSAMENTO_NOTIFICACAO",NotificacaoOrcamentoMongoOutbox.codigoErro(new IllegalStateException("segredo")));
+    }
+    @Test void filaPersistidaEntregaMensagemPorSmtpLocal() throws Exception {
+        agendar();
+        try(var server=new java.net.ServerSocket();var pool=java.util.concurrent.Executors.newSingleThreadExecutor()) {
+            server.bind(new java.net.InetSocketAddress("127.0.0.1",0));server.setSoTimeout(5000);
+            var recebido=pool.submit(()->SmtpEmailGatewayTest.receber(server));
+            var sender=new org.springframework.mail.javamail.JavaMailSenderImpl();
+            sender.setHost("127.0.0.1");sender.setPort(server.getLocalPort());sender.setDefaultEncoding("UTF-8");
+            sender.getJavaMailProperties().setProperty("mail.smtp.timeout","5000");
+            var worker=new EnvioOrcamentoWorker(outbox,new SmtpEmailGateway(sender,"oficina@example.test"),buscar,Clock.fixed(agora,ZoneOffset.UTC));
+            assertTrue(worker.enviarProximo());
+            assertEquals("ENVIADO",outbox.buscar(o.getId()).status());
+            var mime=new jakarta.mail.internet.MimeMessage(jakarta.mail.Session.getInstance(new java.util.Properties()),
+                new java.io.ByteArrayInputStream(recebido.get(5,java.util.concurrent.TimeUnit.SECONDS).getBytes(java.nio.charset.StandardCharsets.US_ASCII)));
+            assertEquals("cliente@example.test",mime.getAllRecipients()[0].toString());
+            assertTrue(mime.getContent().toString().contains("/orcamentos/"+o.getId()+"/aprovacao"));
+        }
+    }
     @Test void repeticaoNaoDuplicaEOutroDestinatarioConflita() {
         agendar();agendar();assertEquals(1,mongo.getCollection("envios_orcamento").countDocuments());
         assertEquals("PENDENTE",outbox.buscar(o.getId()).status());

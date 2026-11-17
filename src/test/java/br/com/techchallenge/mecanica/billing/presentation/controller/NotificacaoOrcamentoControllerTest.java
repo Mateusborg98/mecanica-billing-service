@@ -11,7 +11,7 @@ import br.com.techchallenge.mecanica.billing.application.usecase.EnviarOrcamento
 class NotificacaoOrcamentoControllerTest {
     @Test void solicitaEnvioConsultaSituacaoERejeitaEmailInvalido() throws Exception {
         var usecase=mock(EnviarOrcamentoUseCase.class);var gateway=mock(NotificacaoOrcamentoGateway.class);var id=UUID.randomUUID();
-        var resultado=new NotificacaoOrcamentoGateway.Situacao(id,"PENDENTE",0);
+        var resultado=new NotificacaoOrcamentoGateway.Situacao(id,"PENDENTE",0,null,null);
         when(usecase.executar(id,"cliente@example.test")).thenReturn(resultado);when(gateway.buscar(id)).thenReturn(resultado);
         var mvc=MockMvcBuilders.standaloneSetup(new NotificacaoOrcamentoController(usecase,gateway)).build();
         mvc.perform(post("/orcamentos/"+id+"/notificacao").contentType(MediaType.APPLICATION_JSON).content("{\"destinatario\":\"cliente@example.test\"}"))

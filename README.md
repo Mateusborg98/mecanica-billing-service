@@ -35,3 +35,12 @@ O BDD distribuído está no repositório mecanica-execution-service, em `tests/f
 CI e CD possuem workflows próprios; os manifests Kubernetes estão preparados. A infraestrutura compartilhada está em `mecanica-os-service/infra/fase4`. Documentos de validação com data registram evidências históricas, não o estado atual completo.
 
 Permanecem externas à validação local: compra real de teste Mercado Pago, recebimento via SMTP real, deploy/CD em AWS e evidências de Datadog no ambiente entregue. Preparação de código e manifests não comprova essas etapas.
+## Revisão de entrega em 11/11/2026
+
+[Collection Postman das operações principais](docs/postman/README.md). Testes externos de pagamento e nova tentativa SMTP foram adiados pelo responsável; não representam validação concluída.
+
+[Arquitetura geral e responsabilidades](https://github.com/Mateusborg98/mecanica-os-service/blob/codex/fase4-entrega/docs/architecture-fase-4.md) e [matriz de requisitos e cobertura](https://github.com/Mateusborg98/mecanica-os-service/blob/codex/fase4-entrega/docs/matriz-requisitos-fase-4.md), centralizadas no OS Service. Disponíveis localmente no repositório irmão; links remotos dependem da publicação da revisão documental.
+
+## Swagger e demonstracao
+
+A interface esta em `/swagger-ui/index.html` e o contrato em `/v3/api-docs`. Use **Authorize** com JWT de operador/administrador para operacoes protegidas. O Swagger nao guarda autorizacao apos recarregar a pagina. Consulte o [roteiro de video](https://github.com/Mateusborg98/mecanica-os-service/blob/main/docs/roteiro-swagger-video.md).
