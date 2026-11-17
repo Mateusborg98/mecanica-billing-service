@@ -1,0 +1,193 @@
+{
+  "info": {
+    "name": "Mecanica Fase 4 - billing",
+    "description": "Operacoes principais conferidas contra controllers em 11/11/2026. Uso manual; cenarios alternativos. Credenciais somente no ambiente local do Postman.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "value": "{{jwt}}",
+        "type": "string",
+        "key": "token"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "value": "http://localhost:8082",
+      "type": "string",
+      "key": "baseUrl"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "jwt"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "ordemId"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "reparoId"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "orcamentoId"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "servicoId"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "pecaId"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "placa"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "matriculaOperador"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "destinatario"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "codigoServico"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "sku"
+    }
+  ],
+  "item": [
+    {
+      "response": [],
+      "name": "GET /orcamentos/{{orcamentoId}}",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/orcamentos/{{orcamentoId}}",
+        "description": "Operação manual. Preencha os identificadores com respostas do ambiente. Não execute toda a collection em sequência: aprovação e recusa são alternativas.",
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "response": [],
+      "name": "GET /orcamentos/{{orcamentoId}}/aprovacao",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/orcamentos/{{orcamentoId}}/aprovacao",
+        "description": "Operação manual. Preencha os identificadores com respostas do ambiente. Não execute toda a collection em sequência: aprovação e recusa são alternativas.",
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "response": [],
+      "name": "POST /orcamentos/{{orcamentoId}}/aprovar",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/orcamentos/{{orcamentoId}}/aprovar",
+        "description": "Operação manual. Preencha os identificadores com respostas do ambiente. Não execute toda a collection em sequência: aprovação e recusa são alternativas.",
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "response": [],
+      "name": "POST /orcamentos/{{orcamentoId}}/recusar",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/orcamentos/{{orcamentoId}}/recusar",
+        "description": "Operação manual. Preencha os identificadores com respostas do ambiente. Não execute toda a collection em sequência: aprovação e recusa são alternativas.",
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "response": [],
+      "name": "POST /orcamentos/{{orcamentoId}}/notificacao",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "url": "{{baseUrl}}/orcamentos/{{orcamentoId}}/notificacao",
+        "description": "Operação manual. Preencha os identificadores com respostas do ambiente. Não execute toda a collection em sequência: aprovação e recusa são alternativas.",
+        "body": {
+          "raw": "{\"destinatario\":\"{{destinatario}}\"}",
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "response": [],
+      "name": "GET /orcamentos/{{orcamentoId}}/notificacao",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/orcamentos/{{orcamentoId}}/notificacao",
+        "description": "Operação manual. Preencha os identificadores com respostas do ambiente. Não execute toda a collection em sequência: aprovação e recusa são alternativas."
+      }
+    },
+    {
+      "response": [],
+      "name": "GET /cobrancas/{{orcamentoId}}",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/cobrancas/{{orcamentoId}}",
+        "description": "Operação manual. Preencha os identificadores com respostas do ambiente. Não execute toda a collection em sequência: aprovação e recusa são alternativas.",
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    },
+    {
+      "response": [],
+      "name": "POST /cobrancas/{{orcamentoId}}/checkout",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/cobrancas/{{orcamentoId}}/checkout",
+        "description": "Operação manual. Preencha os identificadores com respostas do ambiente. Não execute toda a collection em sequência: aprovação e recusa são alternativas.",
+        "auth": {
+          "type": "noauth"
+        }
+      }
+    }
+  ]
+}

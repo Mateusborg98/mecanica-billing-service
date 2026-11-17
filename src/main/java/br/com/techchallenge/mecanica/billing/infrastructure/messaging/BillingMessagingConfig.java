@@ -1,0 +1,32 @@
+package br.com.techchallenge.mecanica.billing.infrastructure.messaging;
+import org.springframework.context.annotation.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import br.com.techchallenge.mecanica.billing.application.usecase.ReceberDiagnosticoUseCase;
+import br.com.techchallenge.mecanica.billing.infrastructure.persistence.mapper.OrcamentoPersistenceMapper;
+import br.com.techchallenge.mecanica.billing.infrastructure.persistence.gateway.OrcamentoDiagnosticoMongoGateway;
+@org.springframework.scheduling.annotation.EnableScheduling
+@Configuration
+@ConditionalOnProperty(name="integration.messaging.enabled", havingValue="true")
+public class BillingMessagingConfig {
+    @Bean public PagamentoOutboxWorker pagamentoOutboxWorker(MongoTemplate mongo,
+            org.springframework.amqp.rabbit.core.RabbitTemplate rabbit,java.time.Clock clock) {
+        return new PagamentoOutboxWorker(mongo,new RabbitPagamentoPublisher(rabbit),clock);
+    }
+
+    @Bean public ReparoConcluidoListener reparoConcluidoListener(br.com.techchallenge.mecanica.billing.application.usecase.CobrancaService service) {
+        return new ReparoConcluidoListener(service);
+    }
+    @Bean public DecisaoOutboxWorker decisaoOutboxWorker(MongoTemplate mongo, org.springframework.amqp.rabbit.core.RabbitTemplate rabbit) {
+        var publisher = new RabbitDecisaoPublisher(rabbit);
+        return new DecisaoOutboxWorker(mongo, publisher, java.time.Clock.systemUTC(), publisher::accept);
+    }
+    @Bean public ReceberDiagnosticoUseCase receberDiagnosticoUseCase(MongoTemplate mongo, OrcamentoPersistenceMapper mapper) {
+        return new ReceberDiagnosticoUseCase(new OrcamentoDiagnosticoMongoGateway(mongo, mapper));
+    }
+    @Bean public DiagnosticoListener diagnosticoListener(ReceberDiagnosticoUseCase useCase) { return new DiagnosticoListener(useCase); }
+
+    @Bean public ReparoCanceladoListener reparoCanceladoListener(MongoTemplate mongo) {
+        return new ReparoCanceladoListener(new br.com.techchallenge.mecanica.billing.infrastructure.persistence.gateway.CancelamentoReparoMongoGateway(mongo));
+    }
+}
